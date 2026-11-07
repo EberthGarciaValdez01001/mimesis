@@ -6,8 +6,8 @@ Boss fight biolab para el reto **build&play** de Open2 / Build & Pitch 2026.
 
 Un experimento se escapó en el laboratorio. Tiene **10 segmentos** y una cabeza blindada. Tú tienes un machete y **8 vidas**. Cada vez que el gusano te toca o te acierta una baba, pierdes una vida y nace una **copia tuya** que te persigue. Cada corte que le das al gusano **disuelve una copia**.
 
-**32 KB · sin librerías · sin imágenes · sin audio · sin fuentes externas.**
-Todo se dibuja y suena con código.
+**32 KB · pixel art · sin librerías · sin imágenes · sin audio · sin fuentes externas.**
+Todo se dibuja y suena con código. El mundo se renderiza a 480×270 y se escala con nearest-neighbor; el HUD y los menús quedan nítidos para que se lean.
 
 ---
 
@@ -71,7 +71,7 @@ http://localhost:8002/src/dev.html
 
 | Regla | Cómo se cumple |
 |---|---|
-| **32 KB máximo, sin comprimir** | `index.html` (1.24 KB) + `game.min.js` (22.47 KB) = **24,286 bytes** (74.1% del límite). `npm run build` lo verifica. |
+| **32 KB máximo, sin comprimir** | `index.html` (1.31 KB) + `game.min.js` (22.86 KB) = **24,754 bytes** (75.5% del límite). `npm run build` lo verifica. |
 | **Solo código propio** | Canvas 2D, WebAudio y `localStorage`. Sin engines ni frameworks. Terser solo se usa en build; no se sirve. |
 | **Cero assets** | No hay imágenes, audio, fuentes ni base64. Todo el arte es procedural y todo el sonido se sintetiza con osciladores y ruido. |
 | **Repo nuevo y link jugable** | Este repo + GitHub Pages (ver abajo). |
@@ -99,6 +99,7 @@ http://localhost:8002/src/dev.html
 ## Cómo está hecho
 
 - **Canvas 2D** a 960×540 lógicos, escalado con `devicePixelRatio` y letterbox.
+- **Render pixel-art:** el mundo se dibuja en un buffer de **480×270** y se amplía con nearest-neighbor; el HUD, los menús y los textos se dibujan nítidos a 960×540.
 - **Gusano segmentado:** el cuerpo sigue a la cabeza con una restricción de distancia; cada segmento se puede cortar y la cadena se reconecta. La cabeza está blindada hasta que no queda cuerpo.
 - **Machete autoapuntado:** elige el segmento de cuerpo más cercano dentro del alcance; prioriza los segmentos ya dañados para que no se dispersen los golpes.
 - **Copias:** se crean alrededor del jugador al recibir un golpe; se forman durante 1.3 s, persiguen directo al 89% de la velocidad y son invulnerables. El jugador tiene 1.4 s de invulnerabilidad.

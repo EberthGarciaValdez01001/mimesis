@@ -20,7 +20,13 @@
   };
 
   const cvs = document.getElementById('game');
-  const ctx = cvs.getContext('2d', { alpha: false });
+  const screen = cvs.getContext('2d', { alpha: false });
+  const pix = document.createElement('canvas');
+  pix.width = 480;
+  pix.height = 270;
+  const pctx = pix.getContext('2d', { alpha: false });
+  const PW = pix.width, PH = pix.height;
+  let ctx = screen;
   const view = { s: 1, ox: 0, oy: 0, dpr: 1 };
 
   const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
@@ -875,13 +881,16 @@
     }
   }
 
-  function drawFx() {
+  function drawParts() {
     for (const p of parts) {
       ctx.globalAlpha = Math.max(0, p.life / p.max);
       ctx.fillStyle = p.color;
       ctx.fillRect(p.x - p.s / 2, p.y - p.s / 2, p.s, p.s);
     }
     ctx.globalAlpha = 1;
+  }
+
+  function drawTexts() {
     for (const t of texts) {
       ctx.globalAlpha = Math.min(1, t.life * 2);
       text(t.t, t.x, t.y, t.size, t.color, 'center');
@@ -1130,10 +1139,16 @@
   }
 
   function render() {
+    ctx = screen;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = '#020604';
     ctx.fillRect(0, 0, cvs.width, cvs.height);
-    ctx.setTransform(view.dpr * view.s, 0, 0, view.dpr * view.s, view.dpr * view.ox, view.dpr * view.oy);
+
+    ctx = pctx;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#020604';
+    ctx.fillRect(0, 0, PW, PH);
+    ctx.setTransform(PW / W, 0, 0, PH / H, 0, 0);
 
     ctx.save();
     if (shake > .2) ctx.translate(rnd(-shake, shake), rnd(-shake, shake));
@@ -1143,8 +1158,16 @@
     drawWorm();
     drawClones();
     drawPlayer();
-    drawFx();
+    drawParts();
     ctx.restore();
+
+    ctx = screen;
+    ctx.setTransform(view.dpr * view.s, 0, 0, view.dpr * view.s, view.dpr * view.ox, view.dpr * view.oy);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(pix, 0, 0, PW, PH, 0, 0, W, H);
+    ctx.imageSmoothingEnabled = true;
+
+    drawTexts();
 
     if (state === 'play' || state === 'paused') {
       drawHud();
