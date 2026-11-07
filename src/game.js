@@ -6,11 +6,11 @@
   const W = 960, H = 540;
   const ARENA = { l: 28, t: 96, r: 932, b: 486 };
   const PR = 13, PSPEED = 215;
-  const LIVES = 8, MAX_CLONES = 8;
+  let LIVES = 8, MAX_CLONES = 8;
   const HEAD_R = 22, SEG_R = 16, SPACING = 30;
-  const ATK_RANGE = 82, ATK_CD = .22;
+  let ATK_RANGE = 82, ATK_CD = .22;
   const ATK_X = 916, ATK_Y = 506, ATK_R = 34;
-  const BEST_KEY = 'mim_best_v1', MUTE_KEY = 'mim_mute_v1';
+  const BEST_KEY = 'mim_best_v1', MUTE_KEY = 'mim_mute_v1', MODE_KEY = 'mim_mode_v1';
 
   const C = {
     bg: '#040a08', deep: '#081510', floor: '#07110f', line: 'rgba(125,255,90,.07)',
@@ -20,6 +20,12 @@
     outline: '#04100b', pale2: '#b8c8a0', green3: '#4fbf6a', green4: '#2a6b3a',
     armor2: '#5f6f5f', mouth: '#200812', suit2: '#c5d5d5', tank: '#46524a', dark: '#0b1a12'
   };
+
+  const MODES = [
+    { name: 'FÁCIL', key: 'e', lives: 10, cap: 5, inv: 2, form: 1.8, clone: .78, worm: .82, lunge: 5.4, slime: 4.4, range: 94, cd: .18, extra: -1, desc: 'Copias lentas · más margen' },
+    { name: 'MEDIO', key: 'm', lives: 8, cap: 8, inv: 1.4, form: 1.3, clone: .89, worm: 1, lunge: 4.2, slime: 3.2, range: 82, cd: .22, extra: 0, desc: 'Equilibrio · la experiencia base' },
+    { name: 'DIFÍCIL', key: 'h', lives: 6, cap: 10, inv: 1, form: 1, clone: .96, worm: 1.15, lunge: 3.3, slime: 2.5, range: 74, cd: .26, extra: 1, desc: 'Gusano y copias al límite' }
+  ];
 
   const cvs = document.getElementById('game');
   const screen = cvs.getContext('2d', { alpha: false });
@@ -372,7 +378,8 @@
   let clones = [], slimes = [], parts = [], texts = [], chunks = [];
   let cuts = 0, dissolved = 0, lastHit = '', banner = null;
   let shake = 0, flash = 0, flashColor = '255,70,80', freeze = 0;
-  let best = null, newBest = false, muted = false;
+  let best = {}, newBest = false, muted = false;
+  let mode = 1, D = MODES[1];
 
   let keys = {}, atkMouse = false, atkPointers = new Set();
   let touch = false;
@@ -381,20 +388,29 @@
   let AC = null, master = null, hum = null, humGain = null, noiseBuf = null;
 
   try {
-    best = JSON.parse(localStorage.getItem(BEST_KEY) || 'null');
+    const b = JSON.parse(localStorage.getItem(BEST_KEY) || 'null');
+    best = b ? (b.r ? { m: b } : b) : {};
+    const mm = localStorage.getItem(MODE_KEY);
+    if (mm !== null) {
+      const i = +mm;
+      if (i >= 0 && i < 3) mode = i;
+    }
+    D = MODES[mode];
     muted = localStorage.getItem(MUTE_KEY) === '1';
-  } catch (e) { best = null; }
+  } catch (e) { best = {}; }
 
   function rankFor(t, l) {
-    if (l >= 7 && t <= 100) return 'S';
-    if (l >= 5 && t <= 150) return 'A';
+    if (l >= LIVES - 1 && t <= 100) return 'S';
+    if (l >= Math.max(3, LIVES - 3) && t <= 160) return 'A';
     if (l >= 3) return 'B';
     return 'C';
   }
   function rankVal(r) { return r === 'S' ? 4 : r === 'A' ? 3 : r === 'B' ? 2 : 1; }
+  function bestFor() { return best && best[D.key] ? best[D.key] : null; }
   function saveBest(r) {
-    if (!best || rankVal(r) > rankVal(best.r) || (rankVal(r) === rankVal(best.r) && runT < best.t)) {
-      best = { r, t: runT, l: lives };
+    const b = bestFor();
+    if (!b || rankVal(r) > rankVal(b.r) || (rankVal(r) === rankVal(b.r) && runT < b.t)) {
+      best[D.key] = { r, t: runT, l: lives };
       newBest = true;
       try { localStorage.setItem(BEST_KEY, JSON.stringify(best)); } catch (e) {}
     }
@@ -511,14 +527,19 @@
 
   function startGame() {
     ensureAudio();
+    D = MODES[mode];
+    LIVES = D.lives;
+    MAX_CLONES = D.cap;
+    ATK_RANGE = D.range;
+    ATK_CD = D.cd;
     state = 'play';
-    runT = 0; lives = LIVES; invuln = 1; atkCd = 0; heartT = .8;
+    runT = 0; lives = LIVES; invuln = D.inv; atkCd = 0; heartT = .8;
     cuts = 0; dissolved = 0; lastHit = ''; newBest = false;
     player = { x: 300, y: 300, vx: 0, vy: 0, face: 0, slashT: 0, slashA: 0 };
     clones = []; slimes = []; parts = []; texts = []; chunks = [];
     shake = 0; flash = .45; flashColor = '255,255,255'; freeze = 0;
     initWorm();
-    banner = { title: 'MIMESIS', sub: 'CÓRTALO ANTES DE QUE TE COPIE', life: 2, max: 2 };
+    banner = { title: 'MIMESIS', sub: D.name + ' · CÓRTALO ANTES DE QUE TE COPIE', life: 2, max: 2 };
     joy.id = null; joy.active = false; joy.dx = joy.dy = 0;
     atkPointers.clear(); atkMouse = false; keys = {};
     sfxStart();
@@ -530,7 +551,7 @@
     clones.push({
       x: clamp(player.x + Math.cos(a) * d, ARENA.l + PR, ARENA.r - PR),
       y: clamp(player.y + Math.sin(a) * d, ARENA.t + PR, ARENA.b - PR),
-      form: 1.3, seed: rnd(0, 6.283), face: player.face
+      form: D.form, seed: rnd(0, 6.283), face: player.face
     });
     sfxClone();
   }
@@ -538,7 +559,7 @@
   function hurt(src) {
     if (state !== 'play' || invuln > 0) return;
     lives--;
-    invuln = 1.4;
+    invuln = D.inv;
     lastHit = src;
     shake = 16;
     freeze = .05;
@@ -663,7 +684,7 @@
   function spit() {
     if (!worm.segs.length) return;
     const h = worm.segs[0];
-    const n = bodyCount() >= 6 ? 1 : bodyCount() >= 3 ? 2 : 3;
+    const n = clamp((bodyCount() >= 6 ? 1 : bodyCount() >= 3 ? 2 : 3) + D.extra, 1, 4);
     const base = Math.atan2(player.y - h.y, player.x - h.x);
     for (let i = 0; i < n; i++) {
       const a = base + (i - (n - 1) / 2) * .26;
@@ -695,8 +716,8 @@
         sfxLunge();
       }
     } else if (worm.lunge === 'dash') {
-      h.x += worm.dx * 440 * dt;
-      h.y += worm.dy * 440 * dt;
+      h.x += worm.dx * 440 * D.worm * dt;
+      h.y += worm.dy * 440 * D.worm * dt;
       worm.lt -= dt;
       if (worm.lt <= 0) { worm.lunge = 'recover'; worm.lt = .5; }
     } else if (worm.lunge === 'recover') {
@@ -706,9 +727,9 @@
       if (worm.lungeCd <= 0) {
         worm.lunge = 'wind';
         worm.lt = .75;
-        worm.lungeCd = Math.max(2.1, 4.2 - body * .16);
+        worm.lungeCd = Math.max(2.1, D.lunge - body * .16);
       } else {
-        const sp = 115 + (9 - body) * 6;
+        const sp = (115 + (9 - body) * 6) * D.worm;
         const d = Math.hypot(player.x - h.x, player.y - h.y);
         if (d > 2) {
           h.x += Math.cos(worm.ang) * sp * dt;
@@ -722,7 +743,7 @@
       if (worm.spit <= 0) spit();
     } else if (worm.slimeCd <= 0) {
       worm.spit = .35;
-      worm.slimeCd = Math.max(1.5, 3.2 - body * .12);
+      worm.slimeCd = Math.max(1.5, D.slime - body * .12);
     }
 
     h.x = clamp(h.x, ARENA.l + h.r, ARENA.r - h.r);
@@ -774,8 +795,8 @@
       const dx = player.x - c.x, dy = player.y - c.y;
       const d = Math.hypot(dx, dy);
       if (d > 1) {
-        c.x += dx / d * PSPEED * .89 * dt;
-        c.y += dy / d * PSPEED * .89 * dt;
+        c.x += dx / d * PSPEED * D.clone * dt;
+        c.y += dy / d * PSPEED * D.clone * dt;
         c.face = Math.atan2(dy, dx);
       }
       c.x = clamp(c.x, ARENA.l + PR, ARENA.r - PR);
@@ -1087,7 +1108,7 @@
       ell(c.x + 2, c.y + 10, 14, 6);
       ctx.fill();
       if (c.form > 0) {
-        const r = 16 + (1 - c.form / 1.3) * 14;
+        const r = 16 + (1 - c.form / D.form) * 14;
         ctx.globalAlpha = .3;
         ctx.fillStyle = C.green;
         ell(c.x, c.y, r, r);
@@ -1170,7 +1191,7 @@
         ctx.fillRect(x + 2, y + 3, 2, 10);
       }
     }
-    text('VIDAS', 164, 71, 9, C.dim);
+    text('VIDAS', 28 + LIVES * 16 + 6, 71, 9, C.dim);
   }
 
   function drawWormBar() {
@@ -1200,6 +1221,7 @@
   function drawHud() {
     text('MIMESIS', 28, 24, 12, C.green);
     text(fmt(runT), 28, 44, 19, C.white);
+    text(D.name, 94, 44, 10, C.dim);
     drawLives();
     drawWormBar();
 
@@ -1305,35 +1327,47 @@
     ctx.fillText('MIMESIS', W / 2, 174);
 
     text('EL GUSANO TE COPIA', W / 2, 204, 14, C.green, 'center');
-    text('8 VIDAS · 10 SEGMENTOS · SIN CURACIÓN', W / 2, 228, 11, C.dim, 'center');
+    text(D.name + ' · ' + D.lives + ' VIDAS · 10 SEGMENTOS', W / 2, 228, 11, C.dim, 'center');
 
     ctx.fillStyle = 'rgba(3,8,6,.65)';
-    rr(W / 2 - 300, 260, 600, 146, 14); ctx.fill();
+    rr(W / 2 - 300, 252, 600, 146, 14); ctx.fill();
     ctx.strokeStyle = 'rgba(125,255,90,.28)';
     ctx.lineWidth = 2; ctx.stroke();
 
-    text('MOVER', W / 2 - 150, 292, 17, C.white, 'center');
-    text('WASD / flechas / joystick', W / 2 - 150, 312, 11, C.dim, 'center');
-    text('CORTAR', W / 2 + 150, 292, 17, C.green, 'center');
-    text('espacio / clic / botón', W / 2 + 150, 312, 11, C.dim, 'center');
+    text('MOVER', W / 2 - 150, 284, 17, C.white, 'center');
+    text('WASD / flechas / joystick', W / 2 - 150, 304, 11, C.dim, 'center');
+    text('CORTAR', W / 2 + 150, 284, 17, C.green, 'center');
+    text('espacio / clic / botón', W / 2 + 150, 304, 11, C.dim, 'center');
     ctx.fillStyle = 'rgba(255,255,255,.15)';
-    ctx.fillRect(W / 2, 282, 2, 42);
-    text('Cada golpe del gusano: −1 vida y nace una copia tuya.', W / 2, 344, 12, C.white, 'center');
-    text('Cada corte: el gusano se acorta y disuelve una copia.', W / 2, 364, 12, C.green, 'center');
-    text('La cabeza está blindada hasta cortar el cuerpo.', W / 2, 384, 12, C.green, 'center');
+    ctx.fillRect(W / 2, 274, 2, 42);
+    text('Cada golpe del gusano: −1 vida y nace una copia tuya.', W / 2, 336, 12, C.white, 'center');
+    text('Cada corte: el gusano se acorta y disuelve una copia.', W / 2, 356, 12, C.green, 'center');
+    text('La cabeza está blindada hasta cortar el cuerpo.', W / 2, 376, 12, C.green, 'center');
+
+    const mx = W / 2 - 229, my = 408, mw = 146, gap = 10;
+    for (let i = 0; i < 3; i++) {
+      const m = MODES[i], bx = mx + i * (mw + gap), sel = mode === i;
+      ctx.fillStyle = sel ? 'rgba(125,255,90,.18)' : 'rgba(3,8,6,.8)';
+      rr(bx, my, mw, 30, 8); ctx.fill();
+      ctx.strokeStyle = sel ? C.green : 'rgba(125,255,90,.3)';
+      ctx.lineWidth = 2; ctx.stroke();
+      text(m.name + ' · ' + m.lives, bx + mw / 2, my + 20, 11, sel ? C.white : C.dim, 'center');
+    }
+    text(D.desc, W / 2, 448, 10, C.dim, 'center');
 
     const a = .85 + .15 * Math.sin(time * 4);
     ctx.globalAlpha = a;
     ctx.fillStyle = 'rgba(3,8,6,.8)';
-    rr(W / 2 - 190, 428, 380, 44, 12); ctx.fill();
+    rr(W / 2 - 190, 460, 380, 32, 10); ctx.fill();
     ctx.strokeStyle = 'rgba(125,255,90,.45)';
     ctx.stroke();
-    text('ENTRAR AL LABORATORIO', W / 2, 456, 21, C.white, 'center');
+    text('ENTRAR AL LABORATORIO', W / 2, 482, 20, C.white, 'center');
     ctx.globalAlpha = 1;
 
-    text(best ? 'MEJOR: ' + best.r + ' · ' + fmt(best.t) : 'MEJOR: —', W / 2, 496, 12, C.dim, 'center');
+    const b = bestFor();
+    text('MEJOR ' + D.name + ': ' + (b ? b.r + ' · ' + fmt(b.t) : '—'), W / 2, 512, 11, C.dim, 'center');
     if (window.innerWidth < window.innerHeight) {
-      text('Gira el teléfono para verlo mejor', W / 2, 522, 10, 'rgba(247,240,223,.45)', 'center');
+      text('Gira el teléfono para verlo mejor', W / 2, 530, 9, 'rgba(247,240,223,.45)', 'center');
     }
   }
 
@@ -1347,18 +1381,19 @@
     ctx.strokeText('MIMESIS CONTENIDA', W / 2, 154);
     ctx.fillStyle = C.green;
     ctx.fillText('MIMESIS CONTENIDA', W / 2, 154);
-    text('ESPÉCIMEN 10 NEUTRALIZADO', W / 2, 184, 14, C.white, 'center');
+    text(D.name + ' · ESPÉCIMEN 10 NEUTRALIZADO', W / 2, 184, 14, C.white, 'center');
 
     const r = rankFor(runT, lives);
     text(r, W / 2, 260, 78, C.green, 'center', SANS);
     text('RANGO', W / 2, 284, 11, C.dim, 'center');
 
     text(fmt(runT) + '  ·  ' + lives + ' VIDAS  ·  ' + cuts + ' CORTES  ·  ' + dissolved + ' COPIAS DISUELTAS', W / 2, 330, 13, C.white, 'center');
-    text(newBest ? '¡NUEVO RÉCORD!' : 'MEJOR: ' + (best ? best.r + ' · ' + fmt(best.t) : '—'), W / 2, 362, 13, newBest ? C.cyan : C.dim, 'center');
+    const bw = bestFor();
+    text(newBest ? '¡NUEVO RÉCORD!' : 'MEJOR: ' + (bw ? bw.r + ' · ' + fmt(bw.t) : '—'), W / 2, 362, 13, newBest ? C.cyan : C.dim, 'center');
 
     const a = .78 + .22 * Math.sin(time * 4);
     ctx.globalAlpha = a;
-    text('TOCA PARA OTRA VUELTA', W / 2, 432, 21, C.green, 'center');
+    text('TOCA PARA ELEGIR MODO', W / 2, 432, 21, C.green, 'center');
     ctx.globalAlpha = 1;
   }
 
@@ -1379,15 +1414,16 @@
     ctx.strokeText('TE COPIARON', W / 2, 160);
     ctx.fillStyle = C.white;
     ctx.fillText('TE COPIARON', W / 2, 160);
-    text('AHORA HAY 8 DE TI', W / 2, 190, 14, C.green, 'center');
+    text(D.name + ' · AHORA HAY ' + D.lives + ' DE TI', W / 2, 190, 14, C.green, 'center');
 
     text(lastHit === 'clone' ? 'TU PROPIA COPIA TE ALCANZÓ' : lastHit === 'slime' ? 'LA BABA TE HIZO UNA COPIA' : 'EL GUSANO TE HIZO UNA COPIA', W / 2, 236, 13, C.dim, 'center');
     text(fmt(runT) + '  ·  ' + cuts + ' CORTES  ·  ' + dissolved + ' COPIAS DISUELTAS', W / 2, 282, 13, C.white, 'center');
-    text('MEJOR: ' + (best ? best.r + ' · ' + fmt(best.t) : '—'), W / 2, 316, 13, C.dim, 'center');
+    const bd = bestFor();
+    text('MEJOR: ' + (bd ? bd.r + ' · ' + fmt(bd.t) : '—'), W / 2, 316, 13, C.dim, 'center');
 
     const a = .8 + .2 * Math.sin(time * 4);
     ctx.globalAlpha = a;
-    text('TOCA PARA OTRA VUELTA', W / 2, 410, 21, C.green, 'center');
+    text('TOCA PARA ELEGIR MODO', W / 2, 410, 21, C.green, 'center');
     ctx.globalAlpha = 1;
   }
 
@@ -1470,6 +1506,11 @@
     ensureAudio();
     keys[k] = true;
     if (k === 'm') { toggleMute(); return; }
+    if (state === 'menu' && (k === '1' || k === '2' || k === '3')) {
+      mode = +k - 1; D = MODES[mode];
+      try { localStorage.setItem(MODE_KEY, String(mode)); } catch (e) {}
+      return;
+    }
     if (k === 'p' || k === 'escape') {
       if (state === 'play') state = 'paused';
       else if (state === 'paused') state = 'play';
@@ -1477,7 +1518,7 @@
     }
     if (k === ' ' || k === 'enter') {
       if (state === 'menu') startGame();
-      else if ((state === 'dead' || state === 'win') && time > .35) startGame();
+      else if ((state === 'dead' || state === 'win') && time > .35) state = 'menu';
       else if (state === 'paused') state = 'play';
     }
   });
@@ -1510,8 +1551,19 @@
     const p = toLocal(e);
     if (p.x < 0 || p.x > W || p.y < 0 || p.y > H) return;
     if (p.x > W - 66 && p.y < 64) { toggleMute(); return; }
-    if (state === 'menu') { startGame(); return; }
-    if (state === 'dead' || state === 'win') { if (time > .35) startGame(); return; }
+    if (state === 'menu') {
+      const mx = W / 2 - 229, my = 408, mw = 146, gap = 10;
+      for (let i = 0; i < 3; i++) {
+        const bx = mx + i * (mw + gap);
+        if (p.x >= bx && p.x <= bx + mw && p.y >= my && p.y <= my + 30) {
+          mode = i; D = MODES[i];
+          try { localStorage.setItem(MODE_KEY, String(i)); } catch (e) {}
+          return;
+        }
+      }
+      startGame(); return;
+    }
+    if (state === 'dead' || state === 'win') { if (time > .35) state = 'menu'; return; }
     if (state === 'paused') { state = 'play'; return; }
     if (state !== 'play') return;
 
