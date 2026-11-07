@@ -71,7 +71,7 @@ http://localhost:8002/src/dev.html
 
 | Regla | Cómo se cumple |
 |---|---|
-| **32 KB máximo, sin comprimir** | `index.html` (1.31 KB) + `game.min.js` (22.86 KB) = **24,754 bytes** (75.5% del límite). `npm run build` lo verifica. |
+| **32 KB máximo, sin comprimir** | `index.html` (1.31 KB) + `game.min.js` (27.41 KB) = **29,411 bytes** (89.8% del límite). `npm run build` lo verifica. |
 | **Solo código propio** | Canvas 2D, WebAudio y `localStorage`. Sin engines ni frameworks. Terser solo se usa en build; no se sirve. |
 | **Cero assets** | No hay imágenes, audio, fuentes ni base64. Todo el arte es procedural y todo el sonido se sintetiza con osciladores y ruido. |
 | **Repo nuevo y link jugable** | Este repo + GitHub Pages (ver abajo). |
@@ -100,6 +100,8 @@ http://localhost:8002/src/dev.html
 
 - **Canvas 2D** a 960×540 lógicos, escalado con `devicePixelRatio` y letterbox.
 - **Render pixel-art:** el mundo se dibuja en un buffer de **480×270** y se amplía con nearest-neighbor; el HUD, los menús y los textos se dibujan nítidos a 960×540.
+- **Sprites procedurales:** el agente (32×32), las copias y el gusano (cabeza 40×40, segmentos 28×28) se generan en canvas al iniciar y se dibujan en código. No hay PNGs ni assets en el juego.
+- **Hojas de diseño:** están en `../mimesis-design/` (fuera del repo del juego) como documentación; no se cargan en el build de 32 KB.
 - **Gusano segmentado:** el cuerpo sigue a la cabeza con una restricción de distancia; cada segmento se puede cortar y la cadena se reconecta. La cabeza está blindada hasta que no queda cuerpo.
 - **Machete autoapuntado:** elige el segmento de cuerpo más cercano dentro del alcance; prioriza los segmentos ya dañados para que no se dispersen los golpes.
 - **Copias:** se crean alrededor del jugador al recibir un golpe; se forman durante 1.3 s, persiguen directo al 89% de la velocidad y son invulnerables. El jugador tiene 1.4 s de invulnerabilidad.

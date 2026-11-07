@@ -16,7 +16,9 @@
     bg: '#040a08', deep: '#081510', floor: '#07110f', line: 'rgba(125,255,90,.07)',
     green: '#7dff5a', lime: '#b6ff7a', toxic: '#38f28a', pale: '#d8e8c8',
     cyan: '#8de8ff', white: '#f7f0df', red: '#ff4a5a', dim: '#6f8a7d',
-    amber: '#ffd166', armor: '#8a9a8a'
+    amber: '#ffd166', armor: '#8a9a8a',
+    outline: '#04100b', pale2: '#b8c8a0', green3: '#4fbf6a', green4: '#2a6b3a',
+    armor2: '#5f6f5f', mouth: '#200812', suit2: '#c5d5d5', tank: '#46524a', dark: '#0b1a12'
   };
 
   const cvs = document.getElementById('game');
@@ -68,6 +70,298 @@
     return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
   }
 
+  /* ---------------------------------------------------------------- sprites */
+
+  function mk(w, h) {
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    return c;
+  }
+
+  function sg(c) {
+    const g = c.getContext('2d');
+    g.imageSmoothingEnabled = false;
+    g.lineWidth = 1;
+    return g;
+  }
+
+  function srr(g, x, y, w, h, r, fill, stroke) {
+    r = Math.min(r, w / 2, h / 2);
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+    if (fill) { g.fillStyle = fill; g.fill(); }
+    if (stroke) { g.strokeStyle = stroke; g.lineWidth = 1; g.stroke(); }
+  }
+
+  function sel(g, x, y, rx, ry, fill, stroke) {
+    g.beginPath();
+    g.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    if (fill) { g.fillStyle = fill; g.fill(); }
+    if (stroke) { g.strokeStyle = stroke; g.lineWidth = 1; g.stroke(); }
+  }
+
+  function srect(g, x, y, w, h, fill) {
+    g.fillStyle = fill;
+    g.fillRect(x, y, w, h);
+  }
+
+  function spoly(g, p, fill, stroke) {
+    g.beginPath();
+    g.moveTo(p[0][0], p[0][1]);
+    for (let i = 1; i < p.length; i++) g.lineTo(p[i][0], p[i][1]);
+    g.closePath();
+    if (fill) { g.fillStyle = fill; g.fill(); }
+    if (stroke) { g.strokeStyle = stroke; g.lineWidth = 1; g.stroke(); }
+  }
+
+  function agentSprite(dir, clone, fury) {
+    const c = mk(32, 32), g = sg(c);
+    const outline = C.outline;
+    const suit = clone ? C.green : C.white;
+    const suit2 = clone ? C.green3 : C.suit2;
+    const dark = clone ? C.green4 : C.dark;
+    const accent = clone ? C.toxic : C.cyan;
+    const visor = clone ? C.outline : C.cyan;
+    const tank = clone ? C.green4 : C.tank;
+    const lamp = clone ? C.red : C.amber;
+
+    function mach(x, y) {
+      const blade = clone ? C.green : C.white;
+      const edge = clone ? C.toxic : C.cyan;
+      spoly(g, [[x, y], [x + 5, y - 8], [x + 6, y - 7], [x + 1, y + 1]], blade, outline);
+      g.beginPath();
+      g.moveTo(x + 1, y - 1);
+      g.lineTo(x + 4, y - 5);
+      g.strokeStyle = edge;
+      g.lineWidth = 1;
+      g.stroke();
+      srect(g, x - 2, y + 1, 3, 2, C.armor2);
+      g.strokeStyle = outline;
+      g.lineWidth = 1;
+      g.strokeRect(x - 2.5, y + .5, 3, 2);
+    }
+
+    if (dir === 'down' || dir === 'up') {
+      srr(g, 6, 10, 20, 13, 4, suit, outline);
+      srr(g, 9, 3, 14, 9, 4, suit, outline);
+      srect(g, 14, 10, 5, 2, dark);
+      if (dir === 'down') {
+        srect(g, 11, 6, 10, 3, visor);
+        srect(g, 13, 7, 6, 1, accent);
+        srect(g, 10, 13, 1, 7, accent);
+        srect(g, 21, 13, 1, 7, accent);
+        srect(g, 15, 14, 2, 2, accent);
+      } else {
+        srr(g, 11, 12, 10, 9, 3, tank, outline);
+        g.strokeStyle = C.armor2;
+        g.lineWidth = 1;
+        g.beginPath();
+        g.moveTo(12, 13); g.lineTo(20, 13);
+        g.moveTo(12, 19); g.lineTo(20, 19);
+        g.stroke();
+        srect(g, 9, 12, 1, 9, dark);
+        srect(g, 22, 12, 1, 9, dark);
+      }
+      srr(g, 3, 12, 4, 9, 2, suit2, outline);
+      srr(g, 25, 12, 4, 9, 2, suit2, outline);
+      srect(g, 3, 19, 4, 3, dark);
+      srect(g, 25, 19, 4, 3, dark);
+      srect(g, 7, 20, 18, 2, dark);
+      srect(g, 14, 20, 4, 2, lamp);
+      srect(g, 9, 22, 5, 6, dark);
+      srect(g, 18, 22, 5, 6, dark);
+      srect(g, 8, 27, 6, 2, outline);
+      srect(g, 18, 27, 6, 2, outline);
+      srect(g, 5, 11, 2, 2, lamp);
+      mach(25, 15);
+      if (clone) {
+        srect(g, 12, 6, 2, 2, C.mouth);
+        srect(g, 18, 6, 2, 2, C.mouth);
+        srect(g, 12, 7, 1, 1, C.red);
+        srect(g, 19, 7, 1, 1, C.red);
+      }
+    } else {
+      srr(g, 11, 4, 14, 9, 4, suit, outline);
+      srect(g, 19, 7, 6, 3, visor);
+      srect(g, 21, 8, 3, 1, accent);
+      srect(g, 18, 12, 5, 2, dark);
+      srr(g, 9, 11, 16, 12, 4, suit, outline);
+      srr(g, 4, 12, 6, 9, 3, tank, outline);
+      srect(g, 9, 12, 1, 9, dark);
+      srr(g, 19, 14, 7, 6, 3, suit2, outline);
+      srect(g, 23, 18, 3, 3, dark);
+      srect(g, 10, 20, 14, 2, dark);
+      srect(g, 14, 20, 2, 2, lamp);
+      srect(g, 13, 22, 5, 6, dark);
+      srect(g, 19, 22, 5, 6, dark);
+      srect(g, 12, 27, 6, 2, outline);
+      srect(g, 19, 27, 6, 2, outline);
+      mach(24, 15);
+      if (clone) {
+        srect(g, 21, 8, 2, 2, C.mouth);
+        srect(g, 22, 9, 1, 1, C.red);
+      }
+    }
+
+    if (clone) {
+      for (const q of [[4, 17], [7, 21], [19, 19], [16, 22], [2, 12]]) {
+        srect(g, q[0], q[1], 1, 2, C.green);
+        srect(g, q[0] + 1, q[1], 1, 1, C.green3);
+      }
+    }
+    if (fury) {
+      const ex = dir === 'right' ? 21 : 12;
+      const ey = dir === 'right' ? 8 : 6;
+      srect(g, ex, ey, 2, 2, C.red);
+      srect(g, ex + 6, ey, 2, 2, C.red);
+      if (dir === 'down' || dir === 'up') {
+        spoly(g, [[2, 11], [4, 7], [5, 12]], C.green, outline);
+        spoly(g, [[21, 12], [23, 7], [24, 12]], C.green, outline);
+      }
+    }
+    return c;
+  }
+
+  function wormHeadSprite(armored) {
+    const c = mk(40, 40), g = sg(c);
+    sel(g, 7, 20, 6, 7, C.pale2, C.outline);
+    sel(g, 8, 20, 3, 4, C.pale, C.armor2);
+    sel(g, 22, 20, 15, 16, C.pale, C.outline);
+    g.beginPath();
+    g.arc(22, 20, 13, Math.PI, Math.PI * 2);
+    g.strokeStyle = C.pale2;
+    g.lineWidth = 2;
+    g.stroke();
+    sel(g, 32, 20, 7, 9, C.mouth, C.outline);
+    sel(g, 33, 20, 5, 6, '#480a1a', C.red);
+    for (let i = 0; i < 9; i++) {
+      const a = i / 9 * Math.PI * 2;
+      const cx = 33 + Math.cos(a) * 5.8;
+      const cy = 20 + Math.sin(a) * 5.8;
+      spoly(g, [[cx - 1, cy - 1], [cx + 2, cy + 1], [cx - 1, cy + 2]], C.white, C.outline);
+    }
+    const eye = armored ? C.dark : C.red;
+    srect(g, 14, 10, 4, 4, eye);
+    srect(g, 14, 26, 4, 4, eye);
+    g.strokeStyle = C.outline;
+    g.lineWidth = 1;
+    g.strokeRect(13.5, 9.5, 5, 5);
+    g.strokeRect(13.5, 25.5, 5, 5);
+    if (armored) {
+      spoly(g, [[2, 10], [20, 4], [27, 12], [25, 28], [10, 35], [2, 26]], C.armor, C.outline);
+      g.strokeStyle = C.armor2;
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(4, 13); g.lineTo(22, 8);
+      g.moveTo(4, 22); g.lineTo(24, 20);
+      g.moveTo(6, 29); g.lineTo(23, 26);
+      g.stroke();
+      for (const q of [[5, 15], [5, 24], [20, 12], [20, 26], [14, 5]]) {
+        srect(g, q[0], q[1], 2, 2, C.amber);
+        g.strokeStyle = C.outline;
+        g.lineWidth = 1;
+        g.strokeRect(q[0] - .5, q[1] - .5, 3, 3);
+      }
+      srect(g, 3, 18, 2, 4, C.amber);
+      srect(g, 3, 20, 2, 1, C.outline);
+    } else {
+      g.beginPath();
+      g.arc(22, 20, 16, 0, Math.PI * 2);
+      g.strokeStyle = C.red;
+      g.lineWidth = 2;
+      g.stroke();
+      g.strokeStyle = C.red;
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(18, 7); g.lineTo(21, 12);
+      g.moveTo(20, 30); g.lineTo(17, 34);
+      g.stroke();
+      sel(g, 9, 20, 3, 4, C.toxic);
+    }
+    for (const q of [[39, 22], [38, 26], [35, 30], [32, 33]]) srect(g, q[0], q[1], 1, 1, C.green);
+    return c;
+  }
+
+  function bodySegSprite(kind) {
+    const c = mk(28, 28), g = sg(c);
+    sel(g, 14, 14, 12, 8, C.pale, C.outline);
+    g.beginPath();
+    g.arc(14, 14, 9, Math.PI, Math.PI * 2);
+    g.strokeStyle = C.pale2;
+    g.lineWidth = 2;
+    g.stroke();
+    g.beginPath();
+    g.arc(14, 14, 7, 0, Math.PI * 2);
+    g.strokeStyle = C.green3;
+    g.lineWidth = 1;
+    g.stroke();
+    sel(g, 7, 14, 2, 2, C.toxic, C.outline);
+    g.beginPath();
+    g.arc(5, 14, 3, Math.PI / 2, Math.PI * 1.5);
+    g.strokeStyle = C.armor2;
+    g.lineWidth = 2;
+    g.stroke();
+    for (const q of [[21, 20], [22, 22], [5, 21]]) srect(g, q[0], q[1], 1, 1, C.green);
+    if (kind === 'damaged') {
+      g.strokeStyle = C.red;
+      g.lineWidth = 2;
+      g.beginPath();
+      g.moveTo(12, 8); g.lineTo(15, 13); g.lineTo(11, 18);
+      g.stroke();
+      g.strokeStyle = C.outline;
+      g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(18, 9); g.lineTo(17, 17);
+      g.stroke();
+      g.clearRect(20, 12, 2, 3);
+    }
+    if (kind === 'cut') {
+      g.clearRect(0, 0, 28, 28);
+      sel(g, 12, 14, 10, 8, C.pale, C.outline);
+      sel(g, 23, 14, 4, 7, C.green3, C.outline);
+      sel(g, 24, 14, 2, 4, C.pale, C.green4);
+      sel(g, 25, 14, 1, 2, C.green);
+      for (const q of [[21, 23], [24, 24], [26, 20], [18, 24]]) srect(g, q[0], q[1], 1, 1, C.green);
+    }
+    return c;
+  }
+
+  function mirrorSprite(c) {
+    const m = mk(c.width, c.height), g = sg(m);
+    g.translate(c.width, 0);
+    g.scale(-1, 1);
+    g.drawImage(c, 0, 0);
+    return m;
+  }
+
+  const SPR = { agent: {}, clone: {}, fury: {}, seg: {} };
+
+  function buildSprites() {
+    for (const d of ['down', 'up', 'right']) {
+      SPR.agent[d] = agentSprite(d);
+      SPR.clone[d] = agentSprite(d, true);
+      SPR.fury[d] = agentSprite(d, true, true);
+    }
+    SPR.agent.left = mirrorSprite(SPR.agent.right);
+    SPR.clone.left = mirrorSprite(SPR.clone.right);
+    SPR.fury.left = mirrorSprite(SPR.fury.right);
+    SPR.headA = wormHeadSprite(true);
+    SPR.headE = wormHeadSprite(false);
+    SPR.seg.ok = bodySegSprite('ok');
+    SPR.seg.dam = bodySegSprite('damaged');
+    SPR.seg.cut = bodySegSprite('cut');
+  }
+
+  function dirOf(a) {
+    const c = Math.cos(a), s = Math.sin(a);
+    return Math.abs(c) > Math.abs(s) ? (c > 0 ? 'right' : 'left') : (s > 0 ? 'down' : 'up');
+  }
+
   /* ---------------------------------------------------------------- state */
 
   let state = 'menu';
@@ -75,7 +369,7 @@
   let lives = LIVES, invuln = 0, atkCd = 0, heartT = 0;
   let player = { x: 300, y: 300, vx: 0, vy: 0, face: 0, slashT: 0, slashA: 0 };
   let worm = { segs: [], ang: 0, lunge: '', lt: 0, lungeCd: 2, slimeCd: 2, spit: 0, dx: 0, dy: 0 };
-  let clones = [], slimes = [], parts = [], texts = [];
+  let clones = [], slimes = [], parts = [], texts = [], chunks = [];
   let cuts = 0, dissolved = 0, lastHit = '', banner = null;
   let shake = 0, flash = 0, flashColor = '255,70,80', freeze = 0;
   let best = null, newBest = false, muted = false;
@@ -221,7 +515,7 @@
     runT = 0; lives = LIVES; invuln = 1; atkCd = 0; heartT = .8;
     cuts = 0; dissolved = 0; lastHit = ''; newBest = false;
     player = { x: 300, y: 300, vx: 0, vy: 0, face: 0, slashT: 0, slashA: 0 };
-    clones = []; slimes = []; parts = []; texts = [];
+    clones = []; slimes = []; parts = []; texts = []; chunks = [];
     shake = 0; flash = .45; flashColor = '255,255,255'; freeze = 0;
     initWorm();
     banner = { title: 'MIMESIS', sub: 'CÓRTALO ANTES DE QUE TE COPIE', life: 2, max: 2 };
@@ -347,6 +641,11 @@
     } else if (worm.segs.length === 4) {
       banner = { title: 'FASE 3', sub: 'NO MIRES ATRÁS', life: 1.6, max: 1.6 };
     }
+
+    chunks.push({
+      x: seg.x, y: seg.y, vx: rnd(-70, 70), vy: rnd(-120, -30),
+      life: .7, rot: rnd(0, 6.28), vr: rnd(-8, 8)
+    });
 
     if (clones.length) {
       let bi = 0, bd = 1e9;
@@ -499,6 +798,15 @@
       t.life -= dt;
       t.y -= 24 * dt;
       if (t.life <= 0) texts.splice(i, 1);
+    }
+    for (let i = chunks.length - 1; i >= 0; i--) {
+      const c = chunks[i];
+      c.life -= dt;
+      if (c.life <= 0) { chunks.splice(i, 1); continue; }
+      c.x += c.vx * dt;
+      c.y += c.vy * dt;
+      c.vy += 320 * dt;
+      c.rot += c.vr * dt;
     }
     if (shake > 0) shake = Math.max(0, shake - dt * 65);
     if (flash > 0) flash = Math.max(0, flash - dt * 3.1);
@@ -694,96 +1002,45 @@
     }
   }
 
-  function drawBodySeg(s) {
-    if (s.flash > 0) {
-      ctx.fillStyle = 'rgba(255,255,255,.35)';
-      ell(s.x, s.y, s.r + 3, s.r + 3); ctx.fill();
-    }
-    ctx.fillStyle = 'rgba(0,0,0,.25)';
-    ell(s.x + 4, s.y + 8, s.r, s.r * .55); ctx.fill();
-    ctx.fillStyle = s.hp === 1 ? '#c8d8b0' : C.pale;
-    ctx.strokeStyle = '#0b1a12';
-    ctx.lineWidth = 3;
-    ell(s.x, s.y, s.r, s.r); ctx.fill(); ctx.stroke();
-    ctx.strokeStyle = 'rgba(56,242,138,.4)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r - 5, .2, 5.9);
-    ctx.stroke();
-    if (s.hp === 1) {
-      ctx.strokeStyle = C.red;
-      ctx.lineWidth = 2;
+  function drawEntities() {
+    const segs = worm.segs;
+
+    if (segs.length > 1) {
+      ctx.strokeStyle = C.outline;
+      ctx.lineWidth = 26;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       ctx.beginPath();
-      ctx.moveTo(s.x - 5, s.y - 6);
-      ctx.lineTo(s.x + 3, s.y);
-      ctx.lineTo(s.x - 2, s.y + 7);
+      ctx.moveTo(segs[segs.length - 1].x, segs[segs.length - 1].y);
+      for (let i = segs.length - 2; i >= 1; i--) ctx.lineTo(segs[i].x, segs[i].y);
+      ctx.lineTo(segs[0].x, segs[0].y);
       ctx.stroke();
+      ctx.strokeStyle = C.pale2;
+      ctx.lineWidth = 18;
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+      ctx.lineJoin = 'miter';
     }
-    ctx.fillStyle = 'rgba(56,242,138,.45)';
-    ell(s.x + Math.sin(time * 2 + s.x) * 6, s.y + s.r - 2, 3, 5); ctx.fill();
-  }
 
-  function drawHead(h) {
-    ctx.save();
-    ctx.translate(h.x, h.y);
-    ctx.rotate(worm.ang);
-    ctx.fillStyle = 'rgba(0,0,0,.28)';
-    ell(4, 9, 24, 15); ctx.fill();
-    ctx.fillStyle = h.flash > 0 ? '#ffffff' : C.pale;
-    ctx.strokeStyle = '#0b1a12';
-    ctx.lineWidth = 4;
-    ell(0, 0, h.r, h.r); ctx.fill(); ctx.stroke();
-
-    ctx.fillStyle = '#200812';
-    ell(10, 0, 11, 10); ctx.fill();
-    ctx.fillStyle = C.red;
-    for (let i = 0; i < 6; i++) {
-      const a = i / 6 * 6.283;
-      ctx.beginPath();
-      ctx.moveTo(10 + Math.cos(a) * 7, Math.sin(a) * 7);
-      ctx.lineTo(10 + Math.cos(a) * 12, Math.sin(a) * 12);
-      ctx.lineTo(10 + Math.cos(a + .4) * 7, Math.sin(a + .4) * 7);
-      ctx.closePath();
+    for (let i = segs.length - 1; i >= 1; i--) {
+      const s = segs[i];
+      const spr = s.hp === 1 ? SPR.seg.dam : SPR.seg.ok;
+      ctx.fillStyle = 'rgba(0,0,0,.25)';
+      ell(s.x + 2, s.y + 7, 13, 7);
       ctx.fill();
-    }
-    ctx.fillStyle = C.toxic;
-    ell(14, 0, 4, 3); ctx.fill();
-
-    if (h.armored) {
-      ctx.fillStyle = 'rgba(138,154,138,.9)';
-      ctx.strokeStyle = '#0b1a12';
-      for (let i = 0; i < 3; i++) {
-        ctx.beginPath();
-        ctx.arc(0, 0, h.r - 3 - i * 4, -.9, .9);
-        ctx.lineTo(0, 0);
-        ctx.closePath();
+      ctx.drawImage(spr, s.x - 14, s.y - 14);
+      if (s.flash > 0) {
+        ctx.globalAlpha = Math.min(.45, s.flash * 2);
+        ctx.fillStyle = '#fff';
+        ell(s.x, s.y, 14, 10);
         ctx.fill();
-        ctx.stroke();
+        ctx.globalAlpha = 1;
       }
-      ctx.fillStyle = C.amber;
-      ctx.fillRect(-3, -3, 6, 6);
-    } else {
-      ctx.strokeStyle = 'rgba(255,74,90,.8)';
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc(0, 0, h.r + 2, 0, 6.283);
-      ctx.stroke();
-      ctx.fillStyle = C.red;
-      ell(-6, -8, 3, 3); ctx.fill();
-      ell(-6, 8, 3, 3); ctx.fill();
     }
 
-    if (worm.spit > 0) {
-      ctx.fillStyle = 'rgba(56,242,138,.6)';
-      ell(18, 0, 9 + Math.sin(time * 20) * 2, 7); ctx.fill();
-    }
-    ctx.restore();
-  }
-
-  function drawWorm() {
-    if (worm.lunge === 'wind' && worm.segs.length) {
-      const h = worm.segs[0];
-      ctx.strokeStyle = 'rgba(255,74,90,.35)';
+    if (worm.lunge === 'wind' && segs.length) {
+      const h = segs[0];
+      ctx.strokeStyle = 'rgba(255,74,90,.4)';
       ctx.lineWidth = 2;
       ctx.setLineDash([7, 8]);
       ctx.beginPath();
@@ -792,59 +1049,80 @@
       ctx.stroke();
       ctx.setLineDash([]);
     }
-    for (let i = worm.segs.length - 1; i >= 1; i--) drawBodySeg(worm.segs[i]);
-    if (worm.segs.length) drawHead(worm.segs[0]);
-  }
 
-  function drawAgent(x, y, face, color, alpha, clone, form) {
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = 'rgba(0,0,0,.28)';
-    ell(x + 3, y + 9, 15, 7); ctx.fill();
-    ctx.fillStyle = color;
-    ctx.strokeStyle = '#04100b';
-    ctx.lineWidth = 3;
-    ell(x, y, 12, 13); ctx.fill(); ctx.stroke();
-
-    const hx = x + Math.cos(face) * 5, hy = y + Math.sin(face) * 5 - 3;
-    ctx.fillStyle = clone ? '#8dff8a' : C.white;
-    ell(hx, hy, 8, 8); ctx.fill(); ctx.stroke();
-
-    ctx.strokeStyle = clone ? C.green : C.cyan;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(hx - Math.sin(face) * 4, hy + Math.cos(face) * 4);
-    ctx.lineTo(hx + Math.sin(face) * 4, hy - Math.cos(face) * 4);
-    ctx.stroke();
-
-    const mx = x + Math.cos(face) * 13, my = y + Math.sin(face) * 13;
-    const ex = x + Math.cos(face) * 36, ey = y + Math.sin(face) * 36;
-    ctx.strokeStyle = clone ? C.green : C.cyan;
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(mx, my);
-    ctx.lineTo(ex, ey);
-    ctx.stroke();
-    ctx.strokeStyle = '#04100b';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(mx, my);
-    ctx.lineTo(ex, ey);
-    ctx.stroke();
-
-    if (form !== undefined) {
-      ctx.strokeStyle = 'rgba(125,255,90,.7)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(x, y, 20 + (1 - form / 1.3) * 20, 0, 6.283);
-      ctx.stroke();
+    if (segs.length) {
+      const h = segs[0];
+      ctx.save();
+      ctx.translate(h.x, h.y);
+      ctx.rotate(worm.ang);
+      ctx.drawImage(h.armored ? SPR.headA : SPR.headE, -20, -20);
+      ctx.restore();
+      if (h.flash > 0) {
+        ctx.globalAlpha = Math.min(.4, h.flash * 1.5);
+        ctx.fillStyle = '#fff';
+        ell(h.x, h.y, 20, 20);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      if (worm.spit > 0) {
+        ctx.fillStyle = 'rgba(56,242,138,.6)';
+        ell(h.x + Math.cos(worm.ang) * 20, h.y + Math.sin(worm.ang) * 20, 9 + Math.sin(time * 20) * 2, 7);
+        ctx.fill();
+      }
     }
-    ctx.restore();
-  }
 
-  function drawPlayer() {
+    for (const c of chunks) {
+      ctx.save();
+      ctx.translate(c.x, c.y);
+      ctx.rotate(c.rot);
+      ctx.globalAlpha = Math.max(0, c.life / .7);
+      ctx.drawImage(SPR.seg.cut, -14, -14);
+      ctx.restore();
+    }
+
+    const fury = clones.length >= 6 || lives <= 3;
+    for (const c of clones) {
+      const spr = (fury ? SPR.fury : SPR.clone)[dirOf(c.face)];
+      ctx.fillStyle = 'rgba(0,0,0,.25)';
+      ell(c.x + 2, c.y + 10, 14, 6);
+      ctx.fill();
+      if (c.form > 0) {
+        const r = 16 + (1 - c.form / 1.3) * 14;
+        ctx.globalAlpha = .3;
+        ctx.fillStyle = C.green;
+        ell(c.x, c.y, r, r);
+        ctx.fill();
+        ctx.globalAlpha = .45;
+        ctx.drawImage(spr, c.x - 16, c.y - 16);
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = 'rgba(125,255,90,.7)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, r, 0, 6.283);
+        ctx.stroke();
+      } else {
+        ctx.fillStyle = 'rgba(125,255,90,.1)';
+        ell(c.x, c.y, 20, 20);
+        ctx.fill();
+        ctx.drawImage(spr, c.x - 16, c.y - 16);
+        ctx.strokeStyle = 'rgba(56,242,138,.45)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 5]);
+        ctx.beginPath();
+        ctx.arc(c.x, c.y, 20, 0, 6.283);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    ctx.fillStyle = 'rgba(0,0,0,.3)';
+    ell(player.x + 2, player.y + 12, 14, 6);
+    ctx.fill();
     const blink = invuln > 0 && Math.floor(time * 20) % 2 === 0 ? .35 : 1;
-    drawAgent(player.x, player.y, player.face, C.cyan, blink, false);
+    ctx.globalAlpha = blink;
+    ctx.drawImage(SPR.agent[dirOf(player.face)], player.x - 16, player.y - 16);
+    ctx.globalAlpha = 1;
+
     if (player.slashT > 0) {
       const a = player.slashA;
       ctx.save();
@@ -860,24 +1138,6 @@
       ctx.arc(player.x, player.y, 74, a - .65, a + .65);
       ctx.stroke();
       ctx.restore();
-    }
-  }
-
-  function drawClones() {
-    for (const c of clones) {
-      if (c.form > 0) {
-        ctx.globalAlpha = .25;
-        ctx.fillStyle = C.green;
-        ell(c.x, c.y, 18 + (1 - c.form / 1.3) * 14, 18 + (1 - c.form / 1.3) * 14); ctx.fill();
-        ctx.globalAlpha = 1;
-        drawAgent(c.x, c.y, c.face, C.green, .45, true, c.form);
-      } else {
-        ctx.fillStyle = 'rgba(125,255,90,.1)';
-        ell(c.x, c.y, 20, 20); ctx.fill();
-        drawAgent(c.x, c.y, c.face, C.green, .72, true);
-        ctx.fillStyle = 'rgba(56,242,138,.55)';
-        ell(c.x + Math.sin(time * 3 + c.seed) * 8, c.y + 10, 3, 5); ctx.fill();
-      }
     }
   }
 
@@ -1150,14 +1410,17 @@
     ctx.fillRect(0, 0, PW, PH);
     ctx.setTransform(PW / W, 0, 0, PH / H, 0, 0);
 
+    let sx = 0, sy = 0;
+    if (shake > .2) {
+      sx = rnd(-shake, shake);
+      sy = rnd(-shake, shake);
+    }
+
     ctx.save();
-    if (shake > .2) ctx.translate(rnd(-shake, shake), rnd(-shake, shake));
+    if (sx || sy) ctx.translate(sx, sy);
     drawBg();
     drawArena();
     drawSlimes();
-    drawWorm();
-    drawClones();
-    drawPlayer();
     drawParts();
     ctx.restore();
 
@@ -1165,6 +1428,10 @@
     ctx.setTransform(view.dpr * view.s, 0, 0, view.dpr * view.s, view.dpr * view.ox, view.dpr * view.oy);
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(pix, 0, 0, PW, PH, 0, 0, W, H);
+    ctx.save();
+    if (sx || sy) ctx.translate(sx, sy);
+    drawEntities();
+    ctx.restore();
     ctx.imageSmoothingEnabled = true;
 
     drawTexts();
@@ -1314,6 +1581,7 @@
   }
 
   try { touch = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window; } catch (e) {}
+  buildSprites();
   initWorm();
   resize();
 
