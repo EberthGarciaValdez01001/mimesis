@@ -45,9 +45,9 @@
   const lerp = (a, b, t) => a + (b - a) * t;
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
-  function blocked(x, y) {
+  function wallAt(x, y, r) {
     for (const w of WALLS)
-      if (x + PR > w[0] && x - PR < w[0] + w[2] && y + PR > w[1] && y - PR < w[1] + w[3]) return 1;
+      if (x + r > w[0] && x - r < w[0] + w[2] && y + r > w[1] && y - r < w[1] + w[3]) return 1;
   }
 
   function rr(x, y, w, h, r) {
@@ -710,8 +710,10 @@
         sfxLunge();
       }
     } else if (worm.lunge === 'dash') {
+      const hx = h.x, hy = h.y;
       h.x += worm.dx * 370 * D.worm * dt;
       h.y += worm.dy * 370 * D.worm * dt;
+      if (wallAt(h.x, h.y, h.r)) { h.x = hx; h.y = hy; worm.lunge = 'recover'; worm.lt = .5; }
       worm.lt -= dt;
       if (worm.lt <= 0) { worm.lunge = 'recover'; worm.lt = .5; }
     } else if (worm.lunge === 'recover') {
@@ -726,8 +728,15 @@
         const sp = (135 + (9 - body) * 8) * D.worm;
         const d = Math.hypot(player.x - h.x, player.y - h.y);
         if (d > 2) {
-          h.x += Math.cos(worm.ang) * sp * dt;
-          h.y += Math.sin(worm.ang) * sp * dt;
+          const mx = Math.cos(worm.ang) * sp * dt, my = Math.sin(worm.ang) * sp * dt;
+          if (wallAt(h.x + mx, h.y + my, h.r)) {
+            const dir = player.x > h.x ? 1 : -1;
+            if (!wallAt(h.x + dir * sp * dt, h.y, h.r)) h.x += dir * sp * dt;
+            else if (!wallAt(h.x, h.y + (player.y > h.y ? 1 : -1) * sp * dt, h.r)) h.y += (player.y > h.y ? 1 : -1) * sp * dt;
+          } else {
+            h.x += mx;
+            h.y += my;
+          }
         }
       }
     }
@@ -745,6 +754,7 @@
 
     for (let i = 1; i < worm.segs.length; i++) {
       const prev = worm.segs[i - 1], s = worm.segs[i];
+      const sx = s.x, sy = s.y;
       let dx = s.x - prev.x, dy = s.y - prev.y;
       const d = Math.hypot(dx, dy);
       if (d > .01) {
@@ -756,6 +766,7 @@
       }
       s.x = clamp(s.x, ARENA.l + s.r, ARENA.r - s.r);
       s.y = clamp(s.y, ARENA.t + s.r, ARENA.b - s.r);
+      if (wallAt(s.x, s.y, s.r)) { s.x = sx; s.y = sy; }
       if (s.flash > 0) s.flash -= dt;
     }
     if (h.flash > 0) h.flash -= dt;
@@ -772,7 +783,7 @@
       s.y += s.vy * dt;
       s.life -= dt;
       let gone = s.life <= 0 || s.x < ARENA.l - 20 || s.x > ARENA.r + 20 || s.y < ARENA.t - 20 || s.y > ARENA.b + 20;
-      if (!gone) for (const w of WALLS) if (s.x > w[0] - s.r && s.x < w[0] + w[2] + s.r && s.y > w[1] - s.r && s.y < w[1] + w[3] + s.r) { gone = true; break; }
+      if (!gone && wallAt(s.x, s.y, s.r)) gone = true;
       if (!gone && dist(s, player) < s.r + PR) {
         hurt('slime');
         gone = true;
@@ -797,7 +808,7 @@
       }
       c.x = clamp(c.x, ARENA.l + PR, ARENA.r - PR);
       c.y = clamp(c.y, ARENA.t + PR, ARENA.b - PR);
-      if (blocked(c.x, c.y)) { c.x = ox; c.y = oy; }
+      if (wallAt(c.x, c.y, PR)) { c.x = ox; c.y = oy; }
       if (dist(c, player) < PR + 13) hurt('clone');
     }
   }
@@ -872,9 +883,9 @@
     player.vy = lerp(player.vy, iy * PSPEED, Math.min(1, dt * 12));
     const px = player.x, py = player.y;
     player.x = clamp(player.x + player.vx * dt, ARENA.l + PR, ARENA.r - PR);
-    if (blocked(player.x, player.y)) player.x = px;
+    if (wallAt(player.x, player.y, PR)) player.x = px;
     player.y = clamp(player.y + player.vy * dt, ARENA.t + PR, ARENA.b - PR);
-    if (blocked(player.x, player.y)) player.y = py;
+    if (wallAt(player.x, player.y, PR)) player.y = py;
     if (ix || iy) player.face = Math.atan2(iy, ix);
 
     if (keys[' '] || keys.j || keys.k || atkMouse || atkPointers.size > 0) attack();
@@ -1025,10 +1036,8 @@
     }
 
     for (const w of WALLS) {
-      ctx.fillStyle = '#1b3428';
+      ctx.fillStyle = '#2a4a38';
       ctx.fillRect(w[0], w[1], w[2], w[3]);
-      ctx.fillStyle = 'rgba(255,209,102,.35)';
-      ctx.fillRect(w[0], w[1], w[2], 3);
     }
   }
 
@@ -1192,15 +1201,6 @@
     ctx.restore();
   }
 
-  function drawBeam() {
-    ctx.fillStyle = 'rgba(190,240,255,.07)';
-    ctx.beginPath();
-    ctx.moveTo(player.x, player.y);
-    ctx.arc(player.x, player.y, CONE_R, player.face - CONE_HALF, player.face + CONE_HALF);
-    ctx.closePath();
-    ctx.fill();
-  }
-
   function drawGlows() {
     for (const c of clones) {
       ctx.fillStyle = C.toxic;
@@ -1346,10 +1346,6 @@
     ctx.fillStyle = ready ? C.cyan : C.dim;
     ctx.fillRect(6, -2, 5, 2);
     ctx.restore();
-    for (let i = 0; i < 6; i++) {
-      ctx.fillStyle = i < ammo ? C.amber : '#1b3428';
-      ctx.fillRect(ATK_X - 30 + i * 12, ATK_Y - 58, 8, 5);
-    }
     text(reload > 0 ? 'RECARGA' : 'FUEGO', ATK_X, ATK_Y + 26, 8, C.dim, 'center');
     if (atkCd > 0) {
       ctx.strokeStyle = C.green;
@@ -1576,7 +1572,6 @@
       ctx.setTransform(view.dpr * view.s, 0, 0, view.dpr * view.s, view.dpr * view.ox, view.dpr * view.oy);
       ctx.imageSmoothingEnabled = false;
       drawSlimes();
-      drawBeam();
       drawGlows();
       drawShot();
     }
