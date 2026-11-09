@@ -89,7 +89,7 @@ http://localhost:8002/src/dev.html
 
 | Regla | Cómo se cumple |
 |---|---|
-| **32 KB máximo, sin comprimir** | `index.html` (830 B) + `game.min.js` (31,710 B) = **32,540 bytes** (99.3% del límite). `npm run build` lo verifica. |
+| **32 KB máximo, sin comprimir** | `index.html` (797 B) + `game.min.js` (31,647 B) = **32,444 bytes** (99.0% del límite). `npm run build` lo verifica. |
 | **Solo código propio** | Canvas 2D, WebAudio y `localStorage`. Sin engines ni frameworks. Terser solo se usa en build; no se sirve. |
 | **Cero assets** | No hay imágenes, audio, fuentes ni base64. Todo el arte es procedural y todo el sonido se sintetiza con osciladores y ruido. |
 | **Repo nuevo y link jugable** | Este repo + GitHub Pages (ver abajo). |

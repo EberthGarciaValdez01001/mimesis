@@ -1401,7 +1401,6 @@
     ctx.fillRect(0, 0, W, H);
     ctx.textAlign = 'center';
 
-    text('BUILD & PLAY · 32 KB · CERO ASSETS', W / 2, 76, 12, C.green, 'center');
     ctx.font = `900 84px ${SANS}`;
     ctx.lineWidth = 9;
     ctx.strokeStyle = '#020604';
