@@ -1,5 +1,5 @@
 /* MIMESIS — build&play / 32 KB, sin librerías, sin assets.
-   El gusano te copia. Tienes 8 vidas, una linterna y una pistola. */
+   El gusano te copia. Tienes 6 vidas en Medio, una linterna y una pistola. */
 (() => {
   'use strict';
 
@@ -10,7 +10,7 @@
   const WS = 1.5, BS = 14 * WS, HS = 20 * WS;
   const HEAD_R = 28, SEG_R = 22, SPACING = 42;
   let ATK_RANGE = 195, ATK_CD = .38;
-  const LIGHT_R = 180, CONE_R = 300, CONE_HALF = .55, DARK = .78;
+  const BODY_R = 40, CONE_R = 300, CONE_HALF = .55, DARK = .78;
   const ATK_X = 916, ATK_Y = 506, ATK_R = 34;
   const MUTE_KEY = 'mim_mute_v1', MODE_KEY = 'mim_mode_v1';
 
@@ -24,9 +24,9 @@
   };
 
   const MODES = [
-    { name: 'FÁCIL', key: 'e', lives: 10, cap: 5, inv: 2, form: 1.8, clone: .80, worm: .85, lunge: 5.4, slime: 4.4, range: 230, cd: .32, extra: -1, desc: 'Copias lentas · más margen' },
-    { name: 'MEDIO', key: 'm', lives: 8, cap: 8, inv: 1.4, form: 1.3, clone: .94, worm: 1.15, lunge: 4.2, slime: 3.2, range: 195, cd: .38, extra: 0, desc: 'Equilibrio · la experiencia base' },
-    { name: 'DIFÍCIL', key: 'h', lives: 6, cap: 10, inv: 1, form: 1, clone: 1.02, worm: 1.3, lunge: 3.3, slime: 2.5, range: 160, cd: .44, extra: 1, desc: 'Gusano y copias al límite' }
+    { name: 'FÁCIL', key: 'e', lives: 8, cap: 5, inv: 1.6, form: 1.8, clone: .80, worm: .85, lunge: 4.4, slime: 3.6, range: 230, cd: .32, extra: -1, desc: 'Copias lentas · más margen' },
+    { name: 'MEDIO', key: 'm', lives: 6, cap: 8, inv: 1.1, form: 1.3, clone: .94, worm: 1.15, lunge: 3.2, slime: 2.4, range: 195, cd: .38, extra: 0, desc: 'Equilibrio · la experiencia base' },
+    { name: 'DIFÍCIL', key: 'h', lives: 4, cap: 10, inv: .8, form: 1, clone: 1.02, worm: 1.3, lunge: 2.4, slime: 1.8, range: 160, cd: .44, extra: 1, desc: 'Gusano y copias al límite' }
   ];
 
   const cvs = document.getElementById('game');
@@ -355,13 +355,13 @@
 
   let state = 'menu';
   let time = 0, runT = 0;
-  let lives = LIVES, invuln = 0, atkCd = 0, heartT = 0;
+  let lives = LIVES, invuln = 0, atkCd = 0, heartT = 0, ammo = 6, reload = 0;
   let player = { x: 300, y: 300, vx: 0, vy: 0, face: 0, shotT: 0, shotA: 0, shotX: 0, shotY: 0 };
   let worm = { segs: [], ang: 0, lunge: '', lt: 0, lungeCd: 2, slimeCd: 2, spit: 0, dx: 0, dy: 0 };
   let clones = [], slimes = [], parts = [], texts = [], chunks = [];
   let cuts = 0, dissolved = 0, lastHit = '', banner = null;
   let shake = 0, flash = 0, flashColor = '255,70,80', freeze = 0;
-  let dark = 1, light = 0, lightCd = 3.5, shareT = 0;
+  let dark = 1, light = 0, lightCd = 3.5;
   let muted = false;
   let mode = 1, D = MODES[1];
 
@@ -449,6 +449,7 @@
   function noise(d, v, f) { if (AC) noiseAt(AC.currentTime, d, f, v); }
 
   function sfxShot() { noise(.06, .09, 1200); tone(170, .07, 'square', .06, 55); }
+  function sfxReload() { tone(300, .06, 'square', .04, 500); noise(.05, .04, 2000); }
   function sfxFlash() { noise(.12, .09, 1800); tone(900, .12, 'square', .04, 1400); }
   function sfxHit() { noise(.08, .09, 500); tone(180, .1, 'square', .06, 90); }
   function sfxCut() {
@@ -506,9 +507,9 @@
     ATK_RANGE = D.range;
     ATK_CD = D.cd;
     state = 'play';
-    runT = 0; lives = LIVES; invuln = D.inv; atkCd = 0; heartT = .8;
+    runT = 0; lives = LIVES; invuln = D.inv; atkCd = 0; heartT = .8; ammo = 6; reload = 0;
     cuts = 0; dissolved = 0; lastHit = '';
-    dark = 1; light = 0; lightCd = 3.5; shareT = 0;
+    dark = 1; light = 0; lightCd = 3.5;
     player = { x: 300, y: 300, vx: 0, vy: 0, face: 0, shotT: 0, shotA: 0, shotX: 0, shotY: 0 };
     clones = []; slimes = []; parts = []; texts = []; chunks = [];
     shake = 0; flash = 0; flashColor = '255,255,255'; freeze = 0;
@@ -562,26 +563,37 @@
 
   function bodyCount() { return Math.max(0, worm.segs.length - 1); }
 
-  function getTarget(range) {
-    const R = range || ATK_RANGE;
-    let target = null, bd = R;
-    let wounded = null, wd = R;
+  function canSee(s, d) {
+    if (d > ATK_RANGE) return false;
+    if (light > 0 || d <= BODY_R) return true;
+    let a = Math.atan2(s.y - player.y, s.x - player.x) - player.face;
+    a = Math.atan2(Math.sin(a), Math.cos(a));
+    return Math.abs(a) <= CONE_HALF;
+  }
+
+  function getTarget() {
+    let target = null, bd = ATK_RANGE;
+    let wounded = null, wd = ATK_RANGE;
     if (worm.segs.length > 1) {
       for (let i = 1; i < worm.segs.length; i++) {
         const s = worm.segs[i];
         const d = dist(s, player);
+        if (!canSee(s, d)) continue;
         if (d <= bd) { bd = d; target = s; }
         if (s.hp === 1 && d <= wd) { wd = d; wounded = s; }
       }
     } else {
       const h = worm.segs[0];
-      if (h && !h.armored && dist(h, player) <= R) target = h;
+      if (h && !h.armored && canSee(h, dist(h, player))) target = h;
     }
     return wounded || target;
   }
 
   function attack() {
-    if (state !== 'play' || atkCd > 0) return;
+    if (state !== 'play' || atkCd > 0 || reload > 0) return;
+    if (ammo <= 0) { reload = 1.1; sfxReload(); return; }
+    ammo--;
+    if (ammo <= 0) { reload = 1.1; sfxReload(); }
     atkCd = ATK_CD;
     cuts++;
     const t = getTarget();
@@ -630,10 +642,13 @@
       h.flash = .35;
       banner = { title: 'CABEZA EXPUESTA', sub: 'DOS GOLPES', life: 1.8, max: 1.8 };
       flash = .3;
+      spawnClone();
     } else if (worm.segs.length === 7) {
       banner = { title: 'FASE 2', sub: 'SE ESTÁ ROMPIENDO', life: 1.6, max: 1.6 };
+      spawnClone();
     } else if (worm.segs.length === 4) {
       banner = { title: 'FASE 3', sub: 'NO MIRES ATRÁS', life: 1.6, max: 1.6 };
+      spawnClone();
     }
 
     chunks.push({
@@ -702,7 +717,7 @@
         worm.lt = .75;
         worm.lungeCd = Math.max(2.1, D.lunge - body * .16);
       } else {
-        const sp = (145 + (9 - body) * 8) * D.worm;
+        const sp = (165 + (9 - body) * 8) * D.worm;
         const d = Math.hypot(player.x - h.x, player.y - h.y);
         if (d > 2) {
           h.x += Math.cos(worm.ang) * sp * dt;
@@ -804,7 +819,6 @@
     }
     if (shake > 0) shake = Math.max(0, shake - dt * 65);
     if (flash > 0) flash = Math.max(0, flash - dt * 3.1);
-    if (shareT > 0) shareT = Math.max(0, shareT - dt);
   }
 
   function update(dt) {
@@ -831,6 +845,10 @@
     runT += dt;
     invuln = Math.max(0, invuln - dt);
     atkCd = Math.max(0, atkCd - dt);
+    if (reload > 0) {
+      reload = Math.max(0, reload - dt);
+      if (reload <= 0) ammo = 6;
+    }
     player.shotT = Math.max(0, player.shotT - dt);
 
     let ix = 0, iy = 0;
@@ -845,9 +863,7 @@
     player.vy = lerp(player.vy, iy * PSPEED, Math.min(1, dt * 12));
     player.x = clamp(player.x + player.vx * dt, ARENA.l + PR, ARENA.r - PR);
     player.y = clamp(player.y + player.vy * dt, ARENA.t + PR, ARENA.b - PR);
-    const look = getTarget(ATK_RANGE * 1.5);
-    if (look) player.face = Math.atan2(look.y - player.y, look.x - player.x);
-    else if (ix || iy) player.face = Math.atan2(iy, ix);
+    if (ix || iy) player.face = Math.atan2(iy, ix);
 
     if (keys[' '] || keys.j || keys.k || atkMouse || atkPointers.size > 0) attack();
 
@@ -1127,9 +1143,9 @@
     pctx.fillRect(0, 0, PW, PH);
 
     pctx.globalCompositeOperation = 'destination-out';
-    let g = pctx.createRadialGradient(px, py, 0, px, py, LIGHT_R / 2);
+    let g = pctx.createRadialGradient(px, py, 0, px, py, BODY_R / 2);
     g.addColorStop(0, 'rgba(0,0,0,1)');
-    g.addColorStop(.6, 'rgba(0,0,0,.9)');
+    g.addColorStop(.6, 'rgba(0,0,0,.85)');
     g.addColorStop(1, 'rgba(0,0,0,0)');
     pctx.fillStyle = g;
     pctx.fillRect(0, 0, PW, PH);
@@ -1296,7 +1312,7 @@
     text('COPIAS ' + String(clones.length).padStart(2, '0'), W - 96, 30, 12, clones.length ? C.green : C.dim, 'right');
     if (clones.length >= 7) text('¡PELIGRO!', W - 96, 48, 10, C.red, 'right');
 
-    const ready = atkCd <= 0;
+    const ready = atkCd <= 0 && reload <= 0 && ammo > 0;
     ctx.fillStyle = ready ? 'rgba(125,255,90,.16)' : 'rgba(11,25,18,.8)';
     ctx.strokeStyle = ready ? C.green : 'rgba(125,255,90,.35)';
     ctx.lineWidth = 2;
@@ -1311,12 +1327,23 @@
     ctx.fillStyle = ready ? C.cyan : C.dim;
     ctx.fillRect(6, -2, 5, 2);
     ctx.restore();
-    text('FUEGO', ATK_X, ATK_Y + 26, 8, C.dim, 'center');
-    if (!ready) {
+    for (let i = 0; i < 6; i++) {
+      ctx.fillStyle = i < ammo ? C.amber : '#1b3428';
+      ctx.fillRect(ATK_X - 30 + i * 12, ATK_Y - 58, 8, 5);
+    }
+    text(reload > 0 ? 'RECARGA' : 'FUEGO', ATK_X, ATK_Y + 26, 8, C.dim, 'center');
+    if (atkCd > 0) {
       ctx.strokeStyle = C.green;
       ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.arc(ATK_X, ATK_Y, ATK_R - 4, -1.57, -1.57 + 6.283 * (1 - atkCd / ATK_CD));
+      ctx.stroke();
+    }
+    if (reload > 0) {
+      ctx.strokeStyle = C.amber;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(ATK_X, ATK_Y, ATK_R - 10, -1.57, -1.57 + 6.283 * (1 - reload / 1.1));
       ctx.stroke();
     }
 
@@ -1402,7 +1429,7 @@
     ctx.fillRect(W / 2, 274, 2, 42);
     text('Cada golpe del gusano: −1 vida y nace una copia tuya.', W / 2, 336, 12, C.white, 'center');
     text('Cada disparo: el gusano se acorta y disuelve una copia.', W / 2, 356, 12, C.green, 'center');
-    text('La linterna apunta al gusano; los destellos revelan la sala.', W / 2, 376, 12, C.green, 'center');
+    text('La linterna apunta a donde te mueves; los destellos revelan la sala.', W / 2, 376, 12, C.green, 'center');
 
     const mx = W / 2 - 229, my = 408, mw = 146, gap = 10;
     for (let i = 0; i < 3; i++) {
@@ -1425,23 +1452,6 @@
     ctx.globalAlpha = 1;
   }
 
-  function shareResult(r) {
-    const txt = 'MIMESIS · ' + D.name + ' · Rango ' + r + ' · ' + fmt(runT) + ' · ' + cuts + ' disparos · ' + dissolved + ' copias disueltas — ' + location.href;
-    shareT = 1.6;
-    try {
-      if (navigator.share) navigator.share({ title: 'MIMESIS', text: txt, url: location.href }).catch(() => {});
-      else if (navigator.clipboard) navigator.clipboard.writeText(txt).catch(() => {});
-    } catch (e) {}
-  }
-
-  function drawShare(y) {
-    ctx.fillStyle = 'rgba(3,8,6,.8)';
-    rr(W / 2 - 150, y, 300, 32, 10); ctx.fill();
-    ctx.strokeStyle = 'rgba(141,232,255,.55)';
-    ctx.lineWidth = 2; ctx.stroke();
-    text(shareT > 0 ? '¡LISTO!' : 'COMPARTIR RESULTADO', W / 2, y + 21, 15, C.cyan, 'center');
-  }
-
   function drawWin() {
     ctx.fillStyle = 'rgba(3,8,6,.8)';
     ctx.fillRect(0, 0, W, H);
@@ -1459,12 +1469,11 @@
     text('RANGO', W / 2, 284, 11, C.dim, 'center');
 
     text(fmt(runT) + '  ·  ' + lives + ' VIDAS  ·  ' + cuts + ' DISPAROS  ·  ' + dissolved + ' COPIAS DISUELTAS', W / 2, 330, 13, C.white, 'center');
-
-    drawShare(396);
+    text(mode < 2 ? 'Ahora prueba Difícil, si te atreves.' : 'MIMESIS contenida en Difícil.', W / 2, 378, 12, C.dim, 'center');
 
     const a = .78 + .22 * Math.sin(time * 4);
     ctx.globalAlpha = a;
-    text('TOCA PARA ELEGIR MODO', W / 2, 470, 21, C.green, 'center');
+    text('TOCA PARA ELEGIR MODO', W / 2, 420, 21, C.green, 'center');
     ctx.globalAlpha = 1;
   }
 
@@ -1483,8 +1492,7 @@
 
     text(lastHit === 'clone' ? 'TU PROPIA COPIA TE ALCANZÓ' : lastHit === 'slime' ? 'LA BABA TE HIZO UNA COPIA' : 'EL GUSANO TE HIZO UNA COPIA', W / 2, 236, 13, C.dim, 'center');
     text(fmt(runT) + '  ·  ' + cuts + ' DISPAROS  ·  ' + dissolved + ' COPIAS DISUELTAS', W / 2, 282, 13, C.white, 'center');
-
-    drawShare(350);
+    text('La luz te delata: muévete, encara y recarga.', W / 2, 340, 11, C.dim, 'center');
 
     const a = .8 + .2 * Math.sin(time * 4);
     ctx.globalAlpha = a;
@@ -1655,14 +1663,7 @@
       }
       startGame(); return;
     }
-    if (state === 'dead' || state === 'win') {
-      const sy = state === 'win' ? 396 : 350;
-      if (p.x >= W / 2 - 150 && p.x <= W / 2 + 150 && p.y >= sy && p.y <= sy + 32) {
-        shareResult(rankFor(runT, lives)); return;
-      }
-      if (time > .35) state = 'menu';
-      return;
-    }
+    if (state === 'dead' || state === 'win') { if (time > .35) state = 'menu'; return; }
     if (state === 'paused') { state = 'play'; return; }
     if (state !== 'play') return;
 
