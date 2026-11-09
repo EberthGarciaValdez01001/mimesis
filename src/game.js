@@ -704,8 +704,8 @@
         sfxLunge();
       }
     } else if (worm.lunge === 'dash') {
-      h.x += worm.dx * 400 * D.worm * dt;
-      h.y += worm.dy * 400 * D.worm * dt;
+      h.x += worm.dx * 370 * D.worm * dt;
+      h.y += worm.dy * 370 * D.worm * dt;
       worm.lt -= dt;
       if (worm.lt <= 0) { worm.lunge = 'recover'; worm.lt = .5; }
     } else if (worm.lunge === 'recover') {
@@ -717,7 +717,7 @@
         worm.lt = .75;
         worm.lungeCd = Math.max(2.1, D.lunge - body * .16);
       } else {
-        const sp = (148 + (9 - body) * 8) * D.worm;
+        const sp = (135 + (9 - body) * 8) * D.worm;
         const d = Math.hypot(player.x - h.x, player.y - h.y);
         if (d > 2) {
           h.x += Math.cos(worm.ang) * sp * dt;
