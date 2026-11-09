@@ -90,7 +90,7 @@ http://localhost:8002/src/dev.html
 
 | Regla | Cómo se cumple |
 |---|---|
-| **32 KB máximo, sin comprimir** | `index.html` (642 B) + `game.min.js` (31,890 B) = **32,532 bytes** (99.3% del límite). `npm run build` lo verifica. |
+| **32 KB máximo, sin comprimir** | `index.html` (642 B) + `game.min.js` (32,095 B) = **32,737 bytes** (99.9% del límite). `npm run build` lo verifica. |
 | **Solo código propio** | Canvas 2D, WebAudio y `localStorage`. Sin engines ni frameworks. Terser solo se usa en build; no se sirve. |
 | **Cero assets** | No hay imágenes, audio, fuentes ni base64. Todo el arte es procedural y todo el sonido se sintetiza con osciladores y ruido. |
 | **Repo nuevo y link jugable** | Este repo + GitHub Pages (ver abajo). |
@@ -118,13 +118,13 @@ http://localhost:8002/src/dev.html
 ## Cómo está hecho
 
 - **Canvas 2D** a 960×540 lógicos, escalado con `devicePixelRatio` y letterbox.
-- **Render pixel-art:** el mundo se dibuja en un buffer de **480×270** y se amplía con nearest-neighbor; el HUD, los menús y los textos se dibujan nítidos a 960×540.
-- **Sprites procedurales:** el agente (32×32) con pistola, las copias y el gusano (cabeza 60×60, segmentos 42×42) se generan en canvas al iniciar. No hay PNGs ni assets.
+- **Render pixel-art:** el mundo **y las entidades** se dibujan en un buffer de **480×270** y se amplían con nearest-neighbor; el HUD, los menús y los textos se dibujan nítidos a 960×540.
+- **Sprites procedurales:** el agente (32×32 lógicos → 16×16 en el buffer) con pistola, las copias y el gusano (cabeza 60×60 → 30×30, segmentos 42×42 → 21×21) se generan en canvas al iniciar y se dibujan en el buffer. No hay PNGs ni assets.
 - **Oscuridad y linterna:** el buffer de 480×270 se reutiliza como máscara. Se rellena de negro y se perfora con `destination-out` para el cono de la linterna y una luz mínima alrededor del cuerpo; luego se pinta sobre la escena. El destello global baja la opacidad y añade un flash blanco suave.
 - **Visibilidad real:** la pistola solo puede apuntar a segmentos dentro del cono, dentro de la luz del cuerpo o durante el destello. Las copias y el gusano se delatan con ojos brillantes; la baba y el telegrafiado del lunge se dibujan por encima de la oscuridad.
 - **Pistola autoapuntada:** elige el segmento visible más cercano dentro del alcance; prioriza los dañados. Disparo hitscan con trazadora, muzzle flash, chispa de impacto, retroceso y sonido.
 - **Recarga:** 6 balas, 1.1 s, anillo de recarga y etiqueta `RECARGA`. La recarga es la ventana en la que el gusano y las copias te castigan.
-- **Gusano 1.5×:** cabeza 60×60, segmentos 42×42, radios 28/22 y separación 42. El cuerpo sigue a la cabeza con una restricción de distancia; cada segmento se puede destruir y la cadena se reconecta.
+- **Gusano 1.5×:** cabeza 60×60 en pantalla (30×30 en el buffer), segmentos 42×42 (21×21), radios 28/22 y separación 42. El cuerpo sigue a la cabeza con una restricción de distancia; cada segmento se puede destruir y la cadena se reconecta.
 - **Copias:** se crean alrededor del jugador al recibir un golpe y al cambiar de fase; se forman durante un tiempo, persiguen directo al 65–85% de la velocidad y son invulnerables. El jugador tiene invulnerabilidad temporal.
 - **Muros permanentes:** 2 rectángulos con colisión para agente, copias, baba y todos los segmentos del gusano; la cabeza se desliza para rodearlos y el lunge se corta. Los segmentos del cuerpo no entran.
 - **Baba:** proyectiles telegrafiados desde la boca; si aciertan, cuentan como golpe del gusano.

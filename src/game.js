@@ -36,6 +36,7 @@
   pix.width = 480;
   pix.height = 270;
   const pctx = pix.getContext('2d');
+  pctx.imageSmoothingEnabled = false;
   const PW = pix.width, PH = pix.height;
   let ctx = screen;
   const view = { s: 1, ox: 0, oy: 0, dpr: 1 };
@@ -1173,7 +1174,10 @@
     pctx.globalCompositeOperation = 'destination-out';
     let g = pctx.createRadialGradient(px, py, 0, px, py, BODY_R / 2);
     g.addColorStop(0, 'rgba(0,0,0,1)');
-    g.addColorStop(.6, 'rgba(0,0,0,.85)');
+    g.addColorStop(.45, 'rgba(0,0,0,1)');
+    g.addColorStop(.5, 'rgba(0,0,0,.6)');
+    g.addColorStop(.72, 'rgba(0,0,0,.6)');
+    g.addColorStop(.78, 'rgba(0,0,0,.25)');
     g.addColorStop(1, 'rgba(0,0,0,0)');
     pctx.fillStyle = g;
     pctx.fillRect(0, 0, PW, PH);
@@ -1186,7 +1190,10 @@
     pctx.clip();
     g = pctx.createRadialGradient(px, py, 0, px, py, CONE_R / 2);
     g.addColorStop(0, 'rgba(0,0,0,1)');
-    g.addColorStop(.7, 'rgba(0,0,0,.65)');
+    g.addColorStop(.5, 'rgba(0,0,0,1)');
+    g.addColorStop(.55, 'rgba(0,0,0,.55)');
+    g.addColorStop(.8, 'rgba(0,0,0,.55)');
+    g.addColorStop(.85, 'rgba(0,0,0,.2)');
     g.addColorStop(1, 'rgba(0,0,0,0)');
     pctx.fillStyle = g;
     pctx.fillRect(0, 0, PW, PH);
@@ -1553,18 +1560,13 @@
     drawBg();
     drawArena();
     drawParts();
+    if (state !== 'menu') drawEntities();
     ctx.restore();
 
     ctx = screen;
     ctx.setTransform(view.dpr * view.s, 0, 0, view.dpr * view.s, view.dpr * view.ox, view.dpr * view.oy);
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(pix, 0, 0, PW, PH, 0, 0, W, H);
-    if (state !== 'menu') {
-      ctx.save();
-      if (sx || sy) ctx.translate(sx, sy);
-      drawEntities();
-      ctx.restore();
-    }
 
     if (state === 'play' || state === 'paused') {
       drawDarkness(sx, sy);
