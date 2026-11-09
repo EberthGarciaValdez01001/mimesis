@@ -373,6 +373,7 @@
   let mode = 1, D = MODES[1];
 
   let keys = {}, atkMouse = false, atkPointers = new Set();
+  let mouse = { x: W / 2, y: H / 2 }, mouseAim = false;
   let touch = false;
   let joy = { id: null, active: false, ox: 0, oy: 0, x: 0, y: 0, dx: 0, dy: 0 };
 
@@ -570,28 +571,38 @@
 
   function bodyCount() { return Math.max(0, worm.segs.length - 1); }
 
-  function canSee(s, d) {
-    if (d > ATK_RANGE) return false;
-    if (light > 0 || d <= BODY_R) return true;
-    let a = Math.atan2(s.y - player.y, s.x - player.x) - player.face;
-    a = Math.atan2(Math.sin(a), Math.cos(a));
-    return Math.abs(a) <= CONE_HALF;
+  function rayWall(x, y, dx, dy, max) {
+    let best = max;
+    for (const w of WALLS) {
+      let t0 = (w[0] - x) / dx, t1 = (w[0] + w[2] - x) / dx;
+      if (t0 > t1) { const t = t0; t0 = t1; t1 = t; }
+      let u0 = (w[1] - y) / dy, u1 = (w[1] + w[3] - y) / dy;
+      if (u0 > u1) { const t = u0; u0 = u1; u1 = t; }
+      const a = Math.max(t0, u0), b = Math.min(t1, u1);
+      if (a <= b && b > 0 && a < best) best = Math.max(0, a);
+    }
+    return best;
   }
 
-  function getTarget() {
+  function getTarget(aim) {
     let target = null, bd = ATK_RANGE;
     let wounded = null, wd = ATK_RANGE;
+    const hit = s => {
+      const d = dist(s, player);
+      if (d > ATK_RANGE) return;
+      const ta = Math.atan2(s.y - player.y, s.x - player.x);
+      let a = ta - aim;
+      a = Math.atan2(Math.sin(a), Math.cos(a));
+      if (Math.abs(a) > (mouseAim ? .18 : CONE_HALF)) return;
+      if (d > rayWall(player.x, player.y, Math.cos(ta), Math.sin(ta), ATK_RANGE)) return;
+      if (d <= bd) { bd = d; target = s; }
+      if (s.hp === 1 && d <= wd) { wd = d; wounded = s; }
+    };
     if (worm.segs.length > 1) {
-      for (let i = 1; i < worm.segs.length; i++) {
-        const s = worm.segs[i];
-        const d = dist(s, player);
-        if (!canSee(s, d)) continue;
-        if (d <= bd) { bd = d; target = s; }
-        if (s.hp === 1 && d <= wd) { wd = d; wounded = s; }
-      }
+      for (let i = 1; i < worm.segs.length; i++) hit(worm.segs[i]);
     } else {
       const h = worm.segs[0];
-      if (h && !h.armored && canSee(h, dist(h, player))) target = h;
+      if (h && !h.armored) hit(h);
     }
     return wounded || target;
   }
@@ -603,20 +614,31 @@
     if (ammo <= 0) { reload = 1.1; sfxReload(); }
     atkCd = ATK_CD;
     cuts++;
-    const t = getTarget();
-    const a = t ? Math.atan2(t.y - player.y, t.x - player.x) : player.face;
-    player.face = a;
-    player.shotA = a;
+    const aim = player.face;
+    const t = getTarget(aim);
+    if (!mouseAim && t) player.face = Math.atan2(t.y - player.y, t.x - player.x);
+    player.shotA = aim;
     player.shotT = .1;
-    player.shotX = t ? t.x : player.x + Math.cos(a) * ATK_RANGE;
-    player.shotY = t ? t.y : player.y + Math.sin(a) * ATK_RANGE;
+    const dx = Math.cos(aim), dy = Math.sin(aim);
+    const wd = rayWall(player.x, player.y, dx, dy, ATK_RANGE);
+    player.shotX = t ? t.x : player.x + dx * wd;
+    player.shotY = t ? t.y : player.y + dy * wd;
     sfxShot();
     shake = Math.max(shake, 2);
     if (t) {
       hitSeg(t);
-    } else if (worm.segs.length > 1 && dist(worm.segs[0], player) <= ATK_RANGE) {
-      popup('BLINDADO', worm.segs[0].x, worm.segs[0].y - 38, C.armor, 11);
-      sfxClang();
+    } else if (worm.segs.length > 1) {
+      const h = worm.segs[0];
+      const d = dist(h, player);
+      if (d <= ATK_RANGE) {
+        const ta = Math.atan2(h.y - player.y, h.x - player.x);
+        let da = ta - aim;
+        da = Math.atan2(Math.sin(da), Math.cos(da));
+        if (Math.abs(da) <= (mouseAim ? .18 : CONE_HALF) && d <= rayWall(player.x, player.y, Math.cos(ta), Math.sin(ta), ATK_RANGE)) {
+          popup('BLINDADO', h.x, h.y - 38, C.armor, 11);
+          sfxClang();
+        }
+      }
     }
   }
 
@@ -887,7 +909,8 @@
     if (wallAt(player.x, player.y, PR)) player.x = px;
     player.y = clamp(player.y + player.vy * dt, ARENA.t + PR, ARENA.b - PR);
     if (wallAt(player.x, player.y, PR)) player.y = py;
-    if (ix || iy) player.face = Math.atan2(iy, ix);
+    if (mouseAim) player.face = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+    else if (ix || iy) player.face = Math.atan2(iy, ix);
 
     if (keys[' '] || keys.j || keys.k || atkMouse || atkPointers.size > 0) attack();
 
@@ -1698,6 +1721,10 @@
   });
 
   window.addEventListener('pointermove', e => {
+    if (e.pointerType === 'mouse') {
+      const p = toLocal(e);
+      mouse.x = p.x; mouse.y = p.y; mouseAim = true;
+    }
     if (e.pointerId !== joy.id) return;
     const p = toLocal(e);
     let dx = p.x - joy.ox, dy = p.y - joy.oy;

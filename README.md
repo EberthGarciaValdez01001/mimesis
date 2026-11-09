@@ -14,14 +14,15 @@ Todo se dibuja y suena con código. El mundo se renderiza a 480×270 y se escala
 ## Jugar
 
 - **Modo:** elige **Fácil / Medio / Difícil** en el menú con clic/tap o `1` / `2` / `3`. Se guarda para la próxima.
-- **Moverte y encarar:** `WASD` / flechas / joystick virtual. La linterna apunta en la dirección en la que te mueves.
-- **Disparar:** `Espacio`, `J`, `K`, clic izquierdo o el botón **FUEGO**.
+- **Moverte:** `WASD` / flechas / joystick virtual.
+- **Apuntar:** mueve el **mouse**; la linterna y la pistola lo siguen. En móvil, la linterna apunta hacia donde te mueves.
+- **Disparar:** clic izquierdo (o mantenerlo), `Espacio`, `J`, `K` o el botón **FUEGO**.
 - **Recargar:** automático al gastar las 6 balas; tarda **1.1 s**.
 - **Pausa:** `P` o `Esc`, o el botón de pausa junto al altavoz.
 - **Silenciar:** `M` o el icono del altavoz.
 - **Girar el teléfono:** el juego es horizontal; si abres el link en vertical verás el aviso para girar.
 
-La pistola **solo apunta a segmentos visibles**: dentro del cono de la linterna, dentro de la luz mínima del cuerpo o durante el destello global. Para disparar a distancia tienes que **encarar** al gusano; para esquivar tienes que moverte. El loop es “parar, encarar, disparar, recargar, mover”. Los **dos muros permanentes** te cubren de las copias y de la baba; el gusano los rodea y su lunge se corta.
+La pistola **dispara hacia el mouse** en escritorio; en móvil el botón **FUEGO** autoapunta al segmento más cercano dentro del cono. Los **dos muros permanentes** bloquean al agente, a las copias, a la baba, al gusano y **también la línea de disparo**: si hay un muro entre tú y el gusano, el disparo no pasa. El gusano los rodea y su lunge se corta. Para disparar tienes que apuntar; para esquivar, moverte. El loop es “apuntar, disparar, recargar, mover”.
 
 La **cabeza está blindada** hasta que destruyas los 9 segmentos del cuerpo. Después queda expuesta y son **2 disparos finales**.
 
@@ -51,8 +52,8 @@ La velocidad del gusano es relativa a su base; la de las copias, a la tuya. En l
 | **Golpe de una copia** | **−1 vida**, pero no crea otra copia |
 | **Copias** | Invulnerables, persecución directa al **65–85%** de tu velocidad, máximo **5 / 8 / 10** |
 | **Copias de fase** | Nace una al llegar a cuerpo 7, cuerpo 4 y cabeza expuesta |
-| **Muros** | 2 barreras permanentes; bloquean al agente, las copias, la baba y el gusano (cabeza y cuerpo); el gusano las rodea y su lunge se corta |
-| **Disparo** | Hitscan al segmento visible más cercano dentro del alcance; destruye el segmento y disuelve la copia más cercana |
+| **Muros** | 2 barreras permanentes; bloquean al agente, las copias, la baba, el gusano (cabeza y cuerpo) y los disparos; el gusano las rodea y su lunge se corta |
+| **Disparo** | Hitscan; en escritorio apunta al mouse y en móvil autoapunta; los muros bloquean la línea; destruye el segmento y disuelve la copia más cercana |
 | **Linterna** | Cono de ~63° y 300 px en la dirección en la que te mueves; luz mínima de ~40 px en el cuerpo |
 | **Destello** | Cada 6–9 s revela la sala durante ~1 s; durante el destello la pistola puede apuntar a cualquier segmento dentro del alcance |
 | **Recarga** | 6 balas; 1.1 s; no se puede disparar mientras recarga |
@@ -90,7 +91,7 @@ http://localhost:8002/src/dev.html
 
 | Regla | Cómo se cumple |
 |---|---|
-| **32 KB máximo, sin comprimir** | `index.html` (642 B) + `game.min.js` (32,095 B) = **32,737 bytes** (99.9% del límite). `npm run build` lo verifica. |
+| **32 KB máximo, sin comprimir** | `index.html` (642 B) + `game.min.js` (31,897 B) = **32,539 bytes** (99.3% del límite). `npm run build` lo verifica. |
 | **Solo código propio** | Canvas 2D, WebAudio y `localStorage`. Sin engines ni frameworks. Terser solo se usa en build; no se sirve. |
 | **Cero assets** | No hay imágenes, audio, fuentes ni base64. Todo el arte es procedural y todo el sonido se sintetiza con osciladores y ruido. |
 | **Repo nuevo y link jugable** | Este repo + GitHub Pages (ver abajo). |
@@ -122,11 +123,11 @@ http://localhost:8002/src/dev.html
 - **Sprites procedurales:** el agente (32×32 lógicos → 16×16 en el buffer) con pistola, las copias y el gusano (cabeza 60×60 → 30×30, segmentos 42×42 → 21×21) se generan en canvas al iniciar y se dibujan en el buffer. No hay PNGs ni assets.
 - **Oscuridad y linterna:** el buffer de 480×270 se reutiliza como máscara. Se rellena de negro y se perfora con `destination-out` para el cono de la linterna y una luz mínima alrededor del cuerpo; luego se pinta sobre la escena. El destello global baja la opacidad y añade un flash blanco suave.
 - **Visibilidad real:** la pistola solo puede apuntar a segmentos dentro del cono, dentro de la luz del cuerpo o durante el destello. Las copias y el gusano se delatan con ojos brillantes; la baba y el telegrafiado del lunge se dibujan por encima de la oscuridad.
-- **Pistola autoapuntada:** elige el segmento visible más cercano dentro del alcance; prioriza los dañados. Disparo hitscan con trazadora, muzzle flash, chispa de impacto, retroceso y sonido.
+- **Pistola con mouse:** en escritorio apunta al mouse y la linterna lo sigue; en móvil autoapunta al segmento más cercano. Disparo hitscan con raycast, bloqueo por muros, trazadora, muzzle flash, chispa de impacto, retroceso y sonido.
 - **Recarga:** 6 balas, 1.1 s, anillo de recarga y etiqueta `RECARGA`. La recarga es la ventana en la que el gusano y las copias te castigan.
 - **Gusano 1.5×:** cabeza 60×60 en pantalla (30×30 en el buffer), segmentos 42×42 (21×21), radios 28/22 y separación 42. El cuerpo sigue a la cabeza con una restricción de distancia; cada segmento se puede destruir y la cadena se reconecta.
 - **Copias:** se crean alrededor del jugador al recibir un golpe y al cambiar de fase; se forman durante un tiempo, persiguen directo al 65–85% de la velocidad y son invulnerables. El jugador tiene invulnerabilidad temporal.
-- **Muros permanentes:** 2 rectángulos con colisión para agente, copias, baba y todos los segmentos del gusano; la cabeza se desliza para rodearlos y el lunge se corta. Los segmentos del cuerpo no entran.
+- **Muros permanentes:** 2 rectángulos con colisión para agente, copias, baba, todos los segmentos del gusano y los disparos; la cabeza se desliza para rodearlos y el lunge se corta. Los segmentos del cuerpo no entran.
 - **Baba:** proyectiles telegrafiados desde la boca; si aciertan, cuentan como golpe del gusano.
 - **Fases:** el gusano acelera y ataca más seguido a medida que pierde segmentos; la cabeza expuesta es la fase final.
 - **Audio sintetizado:** hum de laboratorio, pistola, impactos, recarga, copias, baba, destello, alarma y latido cuando quedan pocas vidas.
