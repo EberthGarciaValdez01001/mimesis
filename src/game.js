@@ -12,6 +12,7 @@
   let ATK_RANGE = 195, ATK_CD = .38;
   const BODY_R = 40, CONE_R = 300, CONE_HALF = .55, DARK = .78;
   const ATK_X = 916, ATK_Y = 506, ATK_R = 34;
+  const WALLS = [[250, 210, 80, 24], [640, 340, 100, 26]];
   const MUTE_KEY = 'mim_mute_v1', MODE_KEY = 'mim_mode_v1';
 
   const C = {
@@ -24,9 +25,9 @@
   };
 
   const MODES = [
-    { name: 'FÁCIL', key: 'e', lives: 8, cap: 5, inv: 1.6, form: 1.8, clone: .80, worm: .85, lunge: 4.4, slime: 3.6, range: 230, cd: .32, extra: -1, desc: 'Copias lentas · más margen' },
-    { name: 'MEDIO', key: 'm', lives: 6, cap: 8, inv: 1.1, form: 1.3, clone: .94, worm: 1.15, lunge: 3.2, slime: 2.4, range: 195, cd: .38, extra: 0, desc: 'Equilibrio · la experiencia base' },
-    { name: 'DIFÍCIL', key: 'h', lives: 4, cap: 10, inv: .8, form: 1, clone: 1.02, worm: 1.3, lunge: 2.4, slime: 1.8, range: 160, cd: .44, extra: 1, desc: 'Gusano y copias al límite' }
+    { name: 'FÁCIL', key: 'e', lives: 8, cap: 5, inv: 1.6, form: 1.8, clone: .65, worm: .85, lunge: 4.4, slime: 3.6, range: 230, cd: .32, extra: -1, desc: 'Copias lentas · más margen' },
+    { name: 'MEDIO', key: 'm', lives: 6, cap: 8, inv: 1.1, form: 1.3, clone: .75, worm: 1.15, lunge: 3.2, slime: 2.4, range: 195, cd: .38, extra: 0, desc: 'Equilibrio · la experiencia base' },
+    { name: 'DIFÍCIL', key: 'h', lives: 4, cap: 10, inv: .8, form: 1, clone: .85, worm: 1.3, lunge: 2.4, slime: 1.8, range: 160, cd: .44, extra: 1, desc: 'Gusano y copias al límite' }
   ];
 
   const cvs = document.getElementById('game');
@@ -43,6 +44,11 @@
   const rnd = (a, b) => a + Math.random() * (b - a);
   const lerp = (a, b, t) => a + (b - a) * t;
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+
+  function blocked(x, y) {
+    for (const w of WALLS)
+      if (x + PR > w[0] && x - PR < w[0] + w[2] && y + PR > w[1] && y - PR < w[1] + w[3]) return 1;
+  }
 
   function rr(x, y, w, h, r) {
     r = Math.min(r, w / 2, h / 2);
@@ -766,6 +772,7 @@
       s.y += s.vy * dt;
       s.life -= dt;
       let gone = s.life <= 0 || s.x < ARENA.l - 20 || s.x > ARENA.r + 20 || s.y < ARENA.t - 20 || s.y > ARENA.b + 20;
+      if (!gone) for (const w of WALLS) if (s.x > w[0] - s.r && s.x < w[0] + w[2] + s.r && s.y > w[1] - s.r && s.y < w[1] + w[3] + s.r) { gone = true; break; }
       if (!gone && dist(s, player) < s.r + PR) {
         hurt('slime');
         gone = true;
@@ -782,6 +789,7 @@
       if (c.form > 0) { c.form -= dt; continue; }
       const dx = player.x - c.x, dy = player.y - c.y;
       const d = Math.hypot(dx, dy);
+      const ox = c.x, oy = c.y;
       if (d > 1) {
         c.x += dx / d * PSPEED * D.clone * dt;
         c.y += dy / d * PSPEED * D.clone * dt;
@@ -789,6 +797,7 @@
       }
       c.x = clamp(c.x, ARENA.l + PR, ARENA.r - PR);
       c.y = clamp(c.y, ARENA.t + PR, ARENA.b - PR);
+      if (blocked(c.x, c.y)) { c.x = ox; c.y = oy; }
       if (dist(c, player) < PR + 13) hurt('clone');
     }
   }
@@ -861,8 +870,11 @@
     if (len > 1) { ix /= len; iy /= len; }
     player.vx = lerp(player.vx, ix * PSPEED, Math.min(1, dt * 12));
     player.vy = lerp(player.vy, iy * PSPEED, Math.min(1, dt * 12));
+    const px = player.x, py = player.y;
     player.x = clamp(player.x + player.vx * dt, ARENA.l + PR, ARENA.r - PR);
+    if (blocked(player.x, player.y)) player.x = px;
     player.y = clamp(player.y + player.vy * dt, ARENA.t + PR, ARENA.b - PR);
+    if (blocked(player.x, player.y)) player.y = py;
     if (ix || iy) player.face = Math.atan2(iy, ix);
 
     if (keys[' '] || keys.j || keys.k || atkMouse || atkPointers.size > 0) attack();
@@ -1010,6 +1022,13 @@
       ctx.lineTo(x, y);
       ctx.lineTo(x + sx * c, y);
       ctx.stroke();
+    }
+
+    for (const w of WALLS) {
+      ctx.fillStyle = '#1b3428';
+      ctx.fillRect(w[0], w[1], w[2], w[3]);
+      ctx.fillStyle = 'rgba(255,209,102,.35)';
+      ctx.fillRect(w[0], w[1], w[2], 3);
     }
   }
 
@@ -1468,7 +1487,6 @@
     text('RANGO', W / 2, 284, 11, C.dim, 'center');
 
     text(fmt(runT) + '  ·  ' + lives + ' VIDAS  ·  ' + cuts + ' DISPAROS  ·  ' + dissolved + ' COPIAS DISUELTAS', W / 2, 330, 13, C.white, 'center');
-    text(mode < 2 ? 'Ahora prueba Difícil, si te atreves.' : 'MIMESIS contenida en Difícil.', W / 2, 378, 12, C.dim, 'center');
 
     const a = .78 + .22 * Math.sin(time * 4);
     ctx.globalAlpha = a;
@@ -1491,7 +1509,6 @@
 
     text(lastHit === 'clone' ? 'TU PROPIA COPIA TE ALCANZÓ' : lastHit === 'slime' ? 'LA BABA TE HIZO UNA COPIA' : 'EL GUSANO TE HIZO UNA COPIA', W / 2, 236, 13, C.dim, 'center');
     text(fmt(runT) + '  ·  ' + cuts + ' DISPAROS  ·  ' + dissolved + ' COPIAS DISUELTAS', W / 2, 282, 13, C.white, 'center');
-    text('La luz te delata: muévete, encara y recarga.', W / 2, 340, 11, C.dim, 'center');
 
     const a = .8 + .2 * Math.sin(time * 4);
     ctx.globalAlpha = a;

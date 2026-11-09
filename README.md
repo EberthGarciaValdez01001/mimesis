@@ -21,7 +21,7 @@ Todo se dibuja y suena con código. El mundo se renderiza a 480×270 y se escala
 - **Silenciar:** `M` o el icono del altavoz.
 - **Girar el teléfono:** el juego es horizontal; si abres el link en vertical verás el aviso para girar.
 
-La pistola **solo apunta a segmentos visibles**: dentro del cono de la linterna, dentro de la luz mínima del cuerpo o durante el destello global. Para disparar a distancia tienes que **encarar** al gusano; para esquivar tienes que moverte. El loop es “parar, encarar, disparar, recargar, mover”.
+La pistola **solo apunta a segmentos visibles**: dentro del cono de la linterna, dentro de la luz mínima del cuerpo o durante el destello global. Para disparar a distancia tienes que **encarar** al gusano; para esquivar tienes que moverte. El loop es “parar, encarar, disparar, recargar, mover”. Los **dos muros bajos** te cubren de las copias y de la baba; el gusano pasa por encima.
 
 La **cabeza está blindada** hasta que destruyas los 9 segmentos del cuerpo. Después queda expuesta y son **2 disparos finales**.
 
@@ -33,9 +33,9 @@ Al terminar se muestra el **rango** (S/A/B/C), el tiempo, los disparos y las cop
 
 | Modo | Vidas | Copias | Vel. gusano | Invuln. | Lunge | Baba | Alcance | Cadencia | Vel. copias |
 |---|---|---|---|---|---|---|---|---|---|
-| **Fácil** | 8 | máx. 5 | 85% | 1.6 s | 4.4 s | 3.6 s | 230 px | 0.32 s | 80% |
-| **Medio** | 6 | máx. 8 | 115% | 1.1 s | 3.2 s | 2.4 s | 195 px | 0.38 s | 94% |
-| **Difícil** | 4 | máx. 10 | 130% | 0.8 s | 2.4 s | 1.8 s | 160 px | 0.44 s | 102% |
+| **Fácil** | 8 | máx. 5 | 85% | 1.6 s | 4.4 s | 3.6 s | 230 px | 0.32 s | 65% |
+| **Medio** | 6 | máx. 8 | 115% | 1.1 s | 3.2 s | 2.4 s | 195 px | 0.38 s | 75% |
+| **Difícil** | 4 | máx. 10 | 130% | 0.8 s | 2.4 s | 1.8 s | 160 px | 0.44 s | 85% |
 
 La velocidad del gusano es relativa a su base; la de las copias, a la tuya. En la fase final los tiempos de lunge y baba bajan hasta **2.1 s** y **1.5 s**. La recarga es igual en todos los modos: **6 balas + 1.1 s**.
 
@@ -49,8 +49,9 @@ La velocidad del gusano es relativa a su base; la de las copias, a la tuya. En l
 | **Vidas** | 8 / 6 / 4 según el modo, sin curación |
 | **Golpe del gusano** | Contacto o baba = **−1 vida + 1 copia** |
 | **Golpe de una copia** | **−1 vida**, pero no crea otra copia |
-| **Copias** | Invulnerables, persecución directa al **80–102%** de tu velocidad, máximo **5 / 8 / 10** |
+| **Copias** | Invulnerables, persecución directa al **65–85%** de tu velocidad, máximo **5 / 8 / 10** |
 | **Copias de fase** | Nace una al llegar a cuerpo 7, cuerpo 4 y cabeza expuesta |
+| **Muros** | 2 barreras bajas; bloquean al agente, las copias y la baba; el gusano pasa por encima |
 | **Disparo** | Hitscan al segmento visible más cercano dentro del alcance; destruye el segmento y disuelve la copia más cercana |
 | **Linterna** | Cono de ~63° y 300 px en la dirección en la que te mueves; luz mínima de ~40 px en el cuerpo |
 | **Destello** | Cada 6–9 s revela la sala durante ~1 s; durante el destello la pistola puede apuntar a cualquier segmento dentro del alcance |
@@ -89,7 +90,7 @@ http://localhost:8002/src/dev.html
 
 | Regla | Cómo se cumple |
 |---|---|
-| **32 KB máximo, sin comprimir** | `index.html` (797 B) + `game.min.js` (31,647 B) = **32,444 bytes** (99.0% del límite). `npm run build` lo verifica. |
+| **32 KB máximo, sin comprimir** | `index.html` (694 B) + `game.min.js` (31,955 B) = **32,649 bytes** (99.6% del límite). `npm run build` lo verifica. |
 | **Solo código propio** | Canvas 2D, WebAudio y `localStorage`. Sin engines ni frameworks. Terser solo se usa en build; no se sirve. |
 | **Cero assets** | No hay imágenes, audio, fuentes ni base64. Todo el arte es procedural y todo el sonido se sintetiza con osciladores y ruido. |
 | **Repo nuevo y link jugable** | Este repo + GitHub Pages (ver abajo). |
@@ -124,7 +125,8 @@ http://localhost:8002/src/dev.html
 - **Pistola autoapuntada:** elige el segmento visible más cercano dentro del alcance; prioriza los dañados. Disparo hitscan con trazadora, muzzle flash, chispa de impacto, retroceso y sonido.
 - **Recarga:** 6 balas, 1.1 s, pips en el HUD y anillo de recarga. La recarga es la ventana en la que el gusano y las copias te castigan.
 - **Gusano 1.5×:** cabeza 60×60, segmentos 42×42, radios 28/22 y separación 42. El cuerpo sigue a la cabeza con una restricción de distancia; cada segmento se puede destruir y la cadena se reconecta.
-- **Copias:** se crean alrededor del jugador al recibir un golpe y al cambiar de fase; se forman durante un tiempo, persiguen directo al 80–102% de la velocidad y son invulnerables. El jugador tiene invulnerabilidad temporal.
+- **Copias:** se crean alrededor del jugador al recibir un golpe y al cambiar de fase; se forman durante un tiempo, persiguen directo al 65–85% de la velocidad y son invulnerables. El jugador tiene invulnerabilidad temporal.
+- **Muros bajos:** 2 rectángulos con colisión para el agente y las copias, y bloqueo de la baba; el gusano los atraviesa por encima.
 - **Baba:** proyectiles telegrafiados desde la boca; si aciertan, cuentan como golpe del gusano.
 - **Fases:** el gusano acelera y ataca más seguido a medida que pierde segmentos; la cabeza expuesta es la fase final.
 - **Audio sintetizado:** hum de laboratorio, pistola, impactos, recarga, copias, baba, destello, alarma y latido cuando quedan pocas vidas.
@@ -157,7 +159,7 @@ El **cover** de Open2 se sube aparte; no forma parte del build de 32 KB y se man
 - [ ] Repo público creado **durante** el reto.
 - [ ] GitHub Pages activo y link probado en escritorio y teléfono.
 - [ ] `npm run build` termina sin error y muestra menos de 32,768 bytes.
-- [ ] Probar mover/encarar, disparar, recargar, copias, copias de fase, baba, linterna, destello, pausa, mute, portrait, victoria, derrota y reinicio en móvil.
+- [ ] Probar mover/encarar, disparar, recargar, copias, copias de fase, baba, muros/cobertura, linterna, destello, pausa, mute, portrait, victoria, derrota y reinicio en móvil.
 - [ ] Crear cuenta de Open2 y enviar en `https://app.open2.io/play` antes del **13 nov 2026, 23:59 (Guatemala)**.
 - [ ] Subir el cover en Open2.
 - [ ] Votación: **14–20 nov**; el más votado gana.
