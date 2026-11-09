@@ -1,5 +1,5 @@
 /* MIMESIS — build&play / 32 KB, sin librerías, sin assets.
-   El gusano te copia. Tienes 8 vidas y un machete. */
+   El gusano te copia. Tienes 8 vidas, una linterna y una pistola. */
 (() => {
   'use strict';
 
@@ -7,24 +7,26 @@
   const ARENA = { l: 28, t: 96, r: 932, b: 486 };
   const PR = 13, PSPEED = 215;
   let LIVES = 8, MAX_CLONES = 8;
-  const HEAD_R = 22, SEG_R = 16, SPACING = 30;
-  let ATK_RANGE = 82, ATK_CD = .22;
+  const WS = 1.5, BS = 14 * WS, HS = 20 * WS;
+  const HEAD_R = 28, SEG_R = 22, SPACING = 42;
+  let ATK_RANGE = 195, ATK_CD = .38;
+  const LIGHT_R = 180, CONE_R = 300, CONE_HALF = .55, DARK = .78;
   const ATK_X = 916, ATK_Y = 506, ATK_R = 34;
-  const BEST_KEY = 'mim_best_v1', MUTE_KEY = 'mim_mute_v1', MODE_KEY = 'mim_mode_v1';
+  const MUTE_KEY = 'mim_mute_v1', MODE_KEY = 'mim_mode_v1';
 
   const C = {
-    bg: '#040a08', deep: '#081510', floor: '#07110f', line: 'rgba(125,255,90,.07)',
+    bg: '#040a08', line: 'rgba(125,255,90,.07)',
     green: '#7dff5a', lime: '#b6ff7a', toxic: '#38f28a', pale: '#d8e8c8',
     cyan: '#8de8ff', white: '#f7f0df', red: '#ff4a5a', dim: '#6f8a7d',
     amber: '#ffd166', armor: '#8a9a8a',
     outline: '#04100b', pale2: '#b8c8a0', green3: '#4fbf6a', green4: '#2a6b3a',
-    armor2: '#5f6f5f', mouth: '#200812', suit2: '#c5d5d5', tank: '#46524a', dark: '#0b1a12'
+    armor2: '#5f6f5f', mouth: '#200812', suit: '#e6f6ff', suit2: '#c5d5d5', tank: '#46524a', dark: '#0b1a12'
   };
 
   const MODES = [
-    { name: 'FÁCIL', key: 'e', lives: 10, cap: 5, inv: 2, form: 1.8, clone: .78, worm: .82, lunge: 5.4, slime: 4.4, range: 94, cd: .18, extra: -1, desc: 'Copias lentas · más margen' },
-    { name: 'MEDIO', key: 'm', lives: 8, cap: 8, inv: 1.4, form: 1.3, clone: .89, worm: 1, lunge: 4.2, slime: 3.2, range: 82, cd: .22, extra: 0, desc: 'Equilibrio · la experiencia base' },
-    { name: 'DIFÍCIL', key: 'h', lives: 6, cap: 10, inv: 1, form: 1, clone: .96, worm: 1.15, lunge: 3.3, slime: 2.5, range: 74, cd: .26, extra: 1, desc: 'Gusano y copias al límite' }
+    { name: 'FÁCIL', key: 'e', lives: 10, cap: 5, inv: 2, form: 1.8, clone: .80, worm: .85, lunge: 5.4, slime: 4.4, range: 230, cd: .32, extra: -1, desc: 'Copias lentas · más margen' },
+    { name: 'MEDIO', key: 'm', lives: 8, cap: 8, inv: 1.4, form: 1.3, clone: .94, worm: 1.15, lunge: 4.2, slime: 3.2, range: 195, cd: .38, extra: 0, desc: 'Equilibrio · la experiencia base' },
+    { name: 'DIFÍCIL', key: 'h', lives: 6, cap: 10, inv: 1, form: 1, clone: 1.02, worm: 1.3, lunge: 3.3, slime: 2.5, range: 160, cd: .44, extra: 1, desc: 'Gusano y copias al límite' }
   ];
 
   const cvs = document.getElementById('game');
@@ -32,7 +34,7 @@
   const pix = document.createElement('canvas');
   pix.width = 480;
   pix.height = 270;
-  const pctx = pix.getContext('2d', { alpha: false });
+  const pctx = pix.getContext('2d');
   const PW = pix.width, PH = pix.height;
   let ctx = screen;
   const view = { s: 1, ox: 0, oy: 0, dpr: 1 };
@@ -125,10 +127,10 @@
     if (stroke) { g.strokeStyle = stroke; g.lineWidth = 1; g.stroke(); }
   }
 
-  function agentSprite(dir, clone, fury) {
+  function agentSprite(dir, clone) {
     const c = mk(32, 32), g = sg(c);
     const outline = C.outline;
-    const suit = clone ? C.green : C.white;
+    const suit = clone ? C.green : C.suit;
     const suit2 = clone ? C.green3 : C.suit2;
     const dark = clone ? C.green4 : C.dark;
     const accent = clone ? C.toxic : C.cyan;
@@ -136,20 +138,11 @@
     const tank = clone ? C.green4 : C.tank;
     const lamp = clone ? C.red : C.amber;
 
-    function mach(x, y) {
-      const blade = clone ? C.green : C.white;
-      const edge = clone ? C.toxic : C.cyan;
-      spoly(g, [[x, y], [x + 5, y - 8], [x + 6, y - 7], [x + 1, y + 1]], blade, outline);
-      g.beginPath();
-      g.moveTo(x + 1, y - 1);
-      g.lineTo(x + 4, y - 5);
-      g.strokeStyle = edge;
-      g.lineWidth = 1;
-      g.stroke();
-      srect(g, x - 2, y + 1, 3, 2, C.armor2);
-      g.strokeStyle = outline;
-      g.lineWidth = 1;
-      g.strokeRect(x - 2.5, y + .5, 3, 2);
+    function gun(x, y) {
+      srect(g, x - 1, y - 1, 6, 3, C.armor2);
+      srect(g, x + 5, y, 2, 1, outline);
+      srect(g, x, y + 2, 2, 3, dark);
+      srect(g, x + 1, y + 1, 2, 1, accent);
     }
 
     if (dir === 'down' || dir === 'up') {
@@ -184,7 +177,7 @@
       srect(g, 8, 27, 6, 2, outline);
       srect(g, 18, 27, 6, 2, outline);
       srect(g, 5, 11, 2, 2, lamp);
-      mach(25, 15);
+      gun(25, 15);
       if (clone) {
         srect(g, 12, 6, 2, 2, C.mouth);
         srect(g, 18, 6, 2, 2, C.mouth);
@@ -207,7 +200,7 @@
       srect(g, 19, 22, 5, 6, dark);
       srect(g, 12, 27, 6, 2, outline);
       srect(g, 19, 27, 6, 2, outline);
-      mach(24, 15);
+      gun(24, 15);
       if (clone) {
         srect(g, 21, 8, 2, 2, C.mouth);
         srect(g, 22, 9, 1, 1, C.red);
@@ -220,21 +213,12 @@
         srect(g, q[0] + 1, q[1], 1, 1, C.green3);
       }
     }
-    if (fury) {
-      const ex = dir === 'right' ? 21 : 12;
-      const ey = dir === 'right' ? 8 : 6;
-      srect(g, ex, ey, 2, 2, C.red);
-      srect(g, ex + 6, ey, 2, 2, C.red);
-      if (dir === 'down' || dir === 'up') {
-        spoly(g, [[2, 11], [4, 7], [5, 12]], C.green, outline);
-        spoly(g, [[21, 12], [23, 7], [24, 12]], C.green, outline);
-      }
-    }
     return c;
   }
 
   function wormHeadSprite(armored) {
-    const c = mk(40, 40), g = sg(c);
+    const c = mk(40 * WS, 40 * WS), g = sg(c);
+    g.scale(WS, WS);
     sel(g, 7, 20, 6, 7, C.pale2, C.outline);
     sel(g, 8, 20, 3, 4, C.pale, C.armor2);
     sel(g, 22, 20, 15, 16, C.pale, C.outline);
@@ -294,7 +278,8 @@
   }
 
   function bodySegSprite(kind) {
-    const c = mk(28, 28), g = sg(c);
+    const c = mk(28 * WS, 28 * WS), g = sg(c);
+    g.scale(WS, WS);
     sel(g, 14, 14, 12, 8, C.pale, C.outline);
     g.beginPath();
     g.arc(14, 14, 9, Math.PI, Math.PI * 2);
@@ -345,17 +330,15 @@
     return m;
   }
 
-  const SPR = { agent: {}, clone: {}, fury: {}, seg: {} };
+  const SPR = { agent: {}, clone: {}, seg: {} };
 
   function buildSprites() {
     for (const d of ['down', 'up', 'right']) {
       SPR.agent[d] = agentSprite(d);
       SPR.clone[d] = agentSprite(d, true);
-      SPR.fury[d] = agentSprite(d, true, true);
     }
     SPR.agent.left = mirrorSprite(SPR.agent.right);
     SPR.clone.left = mirrorSprite(SPR.clone.right);
-    SPR.fury.left = mirrorSprite(SPR.fury.right);
     SPR.headA = wormHeadSprite(true);
     SPR.headE = wormHeadSprite(false);
     SPR.seg.ok = bodySegSprite('ok');
@@ -373,12 +356,13 @@
   let state = 'menu';
   let time = 0, runT = 0;
   let lives = LIVES, invuln = 0, atkCd = 0, heartT = 0;
-  let player = { x: 300, y: 300, vx: 0, vy: 0, face: 0, slashT: 0, slashA: 0 };
+  let player = { x: 300, y: 300, vx: 0, vy: 0, face: 0, shotT: 0, shotA: 0, shotX: 0, shotY: 0 };
   let worm = { segs: [], ang: 0, lunge: '', lt: 0, lungeCd: 2, slimeCd: 2, spit: 0, dx: 0, dy: 0 };
   let clones = [], slimes = [], parts = [], texts = [], chunks = [];
   let cuts = 0, dissolved = 0, lastHit = '', banner = null;
   let shake = 0, flash = 0, flashColor = '255,70,80', freeze = 0;
-  let best = {}, newBest = false, muted = false;
+  let dark = 1, light = 0, lightCd = 3.5, shareT = 0;
+  let muted = false;
   let mode = 1, D = MODES[1];
 
   let keys = {}, atkMouse = false, atkPointers = new Set();
@@ -388,8 +372,6 @@
   let AC = null, master = null, hum = null, humGain = null, noiseBuf = null;
 
   try {
-    const b = JSON.parse(localStorage.getItem(BEST_KEY) || 'null');
-    best = b ? (b.r ? { m: b } : b) : {};
     const mm = localStorage.getItem(MODE_KEY);
     if (mm !== null) {
       const i = +mm;
@@ -397,23 +379,13 @@
     }
     D = MODES[mode];
     muted = localStorage.getItem(MUTE_KEY) === '1';
-  } catch (e) { best = {}; }
+  } catch (e) {}
 
   function rankFor(t, l) {
     if (l >= LIVES - 1 && t <= 100) return 'S';
     if (l >= Math.max(3, LIVES - 3) && t <= 160) return 'A';
     if (l >= 3) return 'B';
     return 'C';
-  }
-  function rankVal(r) { return r === 'S' ? 4 : r === 'A' ? 3 : r === 'B' ? 2 : 1; }
-  function bestFor() { return best && best[D.key] ? best[D.key] : null; }
-  function saveBest(r) {
-    const b = bestFor();
-    if (!b || rankVal(r) > rankVal(b.r) || (rankVal(r) === rankVal(b.r) && runT < b.t)) {
-      best[D.key] = { r, t: runT, l: lives };
-      newBest = true;
-      try { localStorage.setItem(BEST_KEY, JSON.stringify(best)); } catch (e) {}
-    }
   }
 
   /* ---------------------------------------------------------------- audio */
@@ -476,7 +448,8 @@
   function tone(f, d, t, v, s) { if (AC) toneAt(f, AC.currentTime, d, t, v, s); }
   function noise(d, v, f) { if (AC) noiseAt(AC.currentTime, d, f, v); }
 
-  function sfxSlash() { noise(.09, .06, 1800); tone(240, .08, 'triangle', .04, 420); }
+  function sfxShot() { noise(.06, .09, 1200); tone(170, .07, 'square', .06, 55); }
+  function sfxFlash() { noise(.12, .09, 1800); tone(900, .12, 'square', .04, 1400); }
   function sfxHit() { noise(.08, .09, 500); tone(180, .1, 'square', .06, 90); }
   function sfxCut() {
     noise(.25, .18, 300);
@@ -519,7 +492,7 @@
     worm = { segs: [], ang: Math.PI, lunge: '', lt: 0, lungeCd: 2.4, slimeCd: 2.6, spit: 0, dx: 0, dy: 0 };
     for (let i = 0; i < 10; i++) {
       worm.segs.push({
-        x: 640 + i * SPACING, y: 250, r: i ? SEG_R : HEAD_R,
+        x: 530 + i * SPACING, y: 250, r: i ? SEG_R : HEAD_R,
         hp: 2, head: i === 0, armored: i === 0, flash: 0
       });
     }
@@ -534,12 +507,13 @@
     ATK_CD = D.cd;
     state = 'play';
     runT = 0; lives = LIVES; invuln = D.inv; atkCd = 0; heartT = .8;
-    cuts = 0; dissolved = 0; lastHit = ''; newBest = false;
-    player = { x: 300, y: 300, vx: 0, vy: 0, face: 0, slashT: 0, slashA: 0 };
+    cuts = 0; dissolved = 0; lastHit = '';
+    dark = 1; light = 0; lightCd = 3.5; shareT = 0;
+    player = { x: 300, y: 300, vx: 0, vy: 0, face: 0, shotT: 0, shotA: 0, shotX: 0, shotY: 0 };
     clones = []; slimes = []; parts = []; texts = []; chunks = [];
-    shake = 0; flash = .45; flashColor = '255,255,255'; freeze = 0;
+    shake = 0; flash = 0; flashColor = '255,255,255'; freeze = 0;
     initWorm();
-    banner = { title: 'MIMESIS', sub: D.name + ' · CÓRTALO ANTES DE QUE TE COPIE', life: 2, max: 2 };
+    banner = { title: 'MIMESIS', sub: D.name + ' · SE FUE LA LUZ', life: 2, max: 2 };
     joy.id = null; joy.active = false; joy.dx = joy.dy = 0;
     atkPointers.clear(); atkMouse = false; keys = {};
     sfxStart();
@@ -547,7 +521,7 @@
 
   function spawnClone() {
     if (clones.length >= MAX_CLONES) clones.shift();
-    const a = rnd(0, 6.283), d = rnd(12, 28);
+    const a = rnd(0, 6.283), d = rnd(36, 56);
     clones.push({
       x: clamp(player.x + Math.cos(a) * d, ARENA.l + PR, ARENA.r - PR),
       y: clamp(player.y + Math.sin(a) * d, ARENA.t + PR, ARENA.b - PR),
@@ -588,9 +562,10 @@
 
   function bodyCount() { return Math.max(0, worm.segs.length - 1); }
 
-  function getTarget() {
-    let target = null, bd = ATK_RANGE;
-    let wounded = null, wd = ATK_RANGE;
+  function getTarget(range) {
+    const R = range || ATK_RANGE;
+    let target = null, bd = R;
+    let wounded = null, wd = R;
     if (worm.segs.length > 1) {
       for (let i = 1; i < worm.segs.length; i++) {
         const s = worm.segs[i];
@@ -600,7 +575,7 @@
       }
     } else {
       const h = worm.segs[0];
-      if (h && !h.armored && dist(h, player) <= bd) target = h;
+      if (h && !h.armored && dist(h, player) <= R) target = h;
     }
     return wounded || target;
   }
@@ -608,21 +583,21 @@
   function attack() {
     if (state !== 'play' || atkCd > 0) return;
     atkCd = ATK_CD;
+    cuts++;
     const t = getTarget();
+    const a = t ? Math.atan2(t.y - player.y, t.x - player.x) : player.face;
+    player.face = a;
+    player.shotA = a;
+    player.shotT = .1;
+    player.shotX = t ? t.x : player.x + Math.cos(a) * ATK_RANGE;
+    player.shotY = t ? t.y : player.y + Math.sin(a) * ATK_RANGE;
+    sfxShot();
+    shake = Math.max(shake, 2);
     if (t) {
-      player.face = Math.atan2(t.y - player.y, t.x - player.x);
-      player.slashA = player.face;
-      player.slashT = .13;
-      sfxSlash();
       hitSeg(t);
-    } else {
-      player.slashA = player.face;
-      player.slashT = .13;
-      sfxSlash();
-      if (worm.segs.length > 1 && dist(worm.segs[0], player) <= ATK_RANGE) {
-        popup('BLINDADO', worm.segs[0].x, worm.segs[0].y - 30, C.armor, 11);
-        sfxClang();
-      }
+    } else if (worm.segs.length > 1 && dist(worm.segs[0], player) <= ATK_RANGE) {
+      popup('BLINDADO', worm.segs[0].x, worm.segs[0].y - 38, C.armor, 11);
+      sfxClang();
     }
   }
 
@@ -635,14 +610,12 @@
       return;
     }
     if (seg.head) {
-      cuts++;
       win();
       return;
     }
 
     const idx = worm.segs.indexOf(seg);
     if (idx > 0) worm.segs.splice(idx, 1);
-    cuts++;
     shake = 10;
     freeze = .05;
     flash = .2;
@@ -689,9 +662,9 @@
     for (let i = 0; i < n; i++) {
       const a = base + (i - (n - 1) / 2) * .26;
       slimes.push({
-        x: h.x + Math.cos(a) * 20, y: h.y + Math.sin(a) * 20,
+        x: h.x + Math.cos(a) * 30, y: h.y + Math.sin(a) * 30,
         vx: Math.cos(a) * 260, vy: Math.sin(a) * 260,
-        r: 9, life: 3
+        r: 10, life: 3
       });
     }
     sfxSlime();
@@ -729,7 +702,7 @@
         worm.lt = .75;
         worm.lungeCd = Math.max(2.1, D.lunge - body * .16);
       } else {
-        const sp = (115 + (9 - body) * 6) * D.worm;
+        const sp = (145 + (9 - body) * 8) * D.worm;
         const d = Math.hypot(player.x - h.x, player.y - h.y);
         if (d > 2) {
           h.x += Math.cos(worm.ang) * sp * dt;
@@ -831,6 +804,7 @@
     }
     if (shake > 0) shake = Math.max(0, shake - dt * 65);
     if (flash > 0) flash = Math.max(0, flash - dt * 3.1);
+    if (shareT > 0) shareT = Math.max(0, shareT - dt);
   }
 
   function update(dt) {
@@ -839,12 +813,25 @@
     updateAudio();
 
     if (state === 'menu' || state === 'paused' || state === 'dead' || state === 'win') return;
+    if (window.innerWidth < window.innerHeight) { state = 'paused'; return; }
+
+    lightCd -= dt;
+    if (lightCd <= 0) {
+      light = 1;
+      lightCd = rnd(6, 9);
+      flash = Math.max(flash, .45);
+      flashColor = '230,245,255';
+      sfxFlash();
+    }
+    light = Math.max(0, light - dt);
+    dark = lerp(dark, light > 0 ? .05 : DARK, Math.min(1, dt * (light > 0 ? 12 : 4)));
+
     if (freeze > 0) { freeze -= dt; return; }
 
     runT += dt;
     invuln = Math.max(0, invuln - dt);
     atkCd = Math.max(0, atkCd - dt);
-    player.slashT = Math.max(0, player.slashT - dt);
+    player.shotT = Math.max(0, player.shotT - dt);
 
     let ix = 0, iy = 0;
     if (keys.a || keys.arrowleft) ix--;
@@ -858,7 +845,9 @@
     player.vy = lerp(player.vy, iy * PSPEED, Math.min(1, dt * 12));
     player.x = clamp(player.x + player.vx * dt, ARENA.l + PR, ARENA.r - PR);
     player.y = clamp(player.y + player.vy * dt, ARENA.t + PR, ARENA.b - PR);
-    if (ix || iy) player.face = Math.atan2(iy, ix);
+    const look = getTarget(ATK_RANGE * 1.5);
+    if (look) player.face = Math.atan2(look.y - player.y, look.x - player.x);
+    else if (ix || iy) player.face = Math.atan2(iy, ix);
 
     if (keys[' '] || keys.j || keys.k || atkMouse || atkPointers.size > 0) attack();
 
@@ -886,8 +875,6 @@
   function win() {
     if (state !== 'play') return;
     state = 'win';
-    newBest = false;
-    saveBest(rankFor(runT, lives));
     if (worm.segs.length) burst(worm.segs[0].x, worm.segs[0].y, 42, C.green);
     worm.segs = [];
     clones = [];
@@ -1028,7 +1015,7 @@
 
     if (segs.length > 1) {
       ctx.strokeStyle = C.outline;
-      ctx.lineWidth = 26;
+      ctx.lineWidth = 26 * WS;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.beginPath();
@@ -1037,7 +1024,7 @@
       ctx.lineTo(segs[0].x, segs[0].y);
       ctx.stroke();
       ctx.strokeStyle = C.pale2;
-      ctx.lineWidth = 18;
+      ctx.lineWidth = 18 * WS;
       ctx.stroke();
       ctx.lineCap = 'butt';
       ctx.lineJoin = 'miter';
@@ -1047,28 +1034,16 @@
       const s = segs[i];
       const spr = s.hp === 1 ? SPR.seg.dam : SPR.seg.ok;
       ctx.fillStyle = 'rgba(0,0,0,.25)';
-      ell(s.x + 2, s.y + 7, 13, 7);
+      ell(s.x + 3, s.y + 10, 13 * WS, 7 * WS);
       ctx.fill();
-      ctx.drawImage(spr, s.x - 14, s.y - 14);
+      ctx.drawImage(spr, s.x - BS, s.y - BS);
       if (s.flash > 0) {
         ctx.globalAlpha = Math.min(.45, s.flash * 2);
         ctx.fillStyle = '#fff';
-        ell(s.x, s.y, 14, 10);
+        ell(s.x, s.y, 14 * WS, 10 * WS);
         ctx.fill();
         ctx.globalAlpha = 1;
       }
-    }
-
-    if (worm.lunge === 'wind' && segs.length) {
-      const h = segs[0];
-      ctx.strokeStyle = 'rgba(255,74,90,.4)';
-      ctx.lineWidth = 2;
-      ctx.setLineDash([7, 8]);
-      ctx.beginPath();
-      ctx.moveTo(h.x, h.y);
-      ctx.lineTo(player.x, player.y);
-      ctx.stroke();
-      ctx.setLineDash([]);
     }
 
     if (segs.length) {
@@ -1076,19 +1051,14 @@
       ctx.save();
       ctx.translate(h.x, h.y);
       ctx.rotate(worm.ang);
-      ctx.drawImage(h.armored ? SPR.headA : SPR.headE, -20, -20);
+      ctx.drawImage(h.armored ? SPR.headA : SPR.headE, -HS, -HS);
       ctx.restore();
       if (h.flash > 0) {
         ctx.globalAlpha = Math.min(.4, h.flash * 1.5);
         ctx.fillStyle = '#fff';
-        ell(h.x, h.y, 20, 20);
+        ell(h.x, h.y, 20 * WS, 20 * WS);
         ctx.fill();
         ctx.globalAlpha = 1;
-      }
-      if (worm.spit > 0) {
-        ctx.fillStyle = 'rgba(56,242,138,.6)';
-        ell(h.x + Math.cos(worm.ang) * 20, h.y + Math.sin(worm.ang) * 20, 9 + Math.sin(time * 20) * 2, 7);
-        ctx.fill();
       }
     }
 
@@ -1097,13 +1067,12 @@
       ctx.translate(c.x, c.y);
       ctx.rotate(c.rot);
       ctx.globalAlpha = Math.max(0, c.life / .7);
-      ctx.drawImage(SPR.seg.cut, -14, -14);
+      ctx.drawImage(SPR.seg.cut, -BS, -BS);
       ctx.restore();
     }
 
-    const fury = clones.length >= 6 || lives <= 3;
     for (const c of clones) {
-      const spr = (fury ? SPR.fury : SPR.clone)[dirOf(c.face)];
+      const spr = SPR.clone[dirOf(c.face)];
       ctx.fillStyle = 'rgba(0,0,0,.25)';
       ell(c.x + 2, c.y + 10, 14, 6);
       ctx.fill();
@@ -1139,27 +1108,126 @@
     ctx.fillStyle = 'rgba(0,0,0,.3)';
     ell(player.x + 2, player.y + 12, 14, 6);
     ctx.fill();
+    ctx.strokeStyle = 'rgba(141,232,255,.45)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, 19, 0, 6.283);
+    ctx.stroke();
     const blink = invuln > 0 && Math.floor(time * 20) % 2 === 0 ? .35 : 1;
     ctx.globalAlpha = blink;
     ctx.drawImage(SPR.agent[dirOf(player.face)], player.x - 16, player.y - 16);
     ctx.globalAlpha = 1;
+  }
 
-    if (player.slashT > 0) {
-      const a = player.slashA;
-      ctx.save();
-      ctx.globalAlpha = player.slashT / .13;
-      ctx.strokeStyle = C.white;
-      ctx.lineWidth = 5;
-      ctx.beginPath();
-      ctx.arc(player.x, player.y, 60, a - .9, a + .9);
-      ctx.stroke();
-      ctx.strokeStyle = C.cyan;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(player.x, player.y, 74, a - .65, a + .65);
-      ctx.stroke();
-      ctx.restore();
+  function drawDarkness(sx, sy) {
+    const px = player.x / 2, py = player.y / 2;
+    pctx.setTransform(1, 0, 0, 1, 0, 0);
+    pctx.globalCompositeOperation = 'source-over';
+    pctx.fillStyle = '#020604';
+    pctx.fillRect(0, 0, PW, PH);
+
+    pctx.globalCompositeOperation = 'destination-out';
+    let g = pctx.createRadialGradient(px, py, 0, px, py, LIGHT_R / 2);
+    g.addColorStop(0, 'rgba(0,0,0,1)');
+    g.addColorStop(.6, 'rgba(0,0,0,.9)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    pctx.fillStyle = g;
+    pctx.fillRect(0, 0, PW, PH);
+
+    pctx.save();
+    pctx.beginPath();
+    pctx.moveTo(px, py);
+    pctx.arc(px, py, CONE_R / 2, player.face - CONE_HALF, player.face + CONE_HALF);
+    pctx.closePath();
+    pctx.clip();
+    g = pctx.createRadialGradient(px, py, 0, px, py, CONE_R / 2);
+    g.addColorStop(0, 'rgba(0,0,0,1)');
+    g.addColorStop(.7, 'rgba(0,0,0,.65)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    pctx.fillStyle = g;
+    pctx.fillRect(0, 0, PW, PH);
+    pctx.restore();
+
+    pctx.globalCompositeOperation = 'source-over';
+
+    ctx.save();
+    if (sx || sy) ctx.translate(sx, sy);
+    ctx.globalAlpha = dark;
+    ctx.drawImage(pix, 0, 0, PW, PH, 0, 0, W, H);
+    ctx.restore();
+  }
+
+  function drawBeam() {
+    ctx.fillStyle = 'rgba(190,240,255,.07)';
+    ctx.beginPath();
+    ctx.moveTo(player.x, player.y);
+    ctx.arc(player.x, player.y, CONE_R, player.face - CONE_HALF, player.face + CONE_HALF);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawGlows() {
+    for (const c of clones) {
+      ctx.fillStyle = C.toxic;
+      ctx.beginPath(); ctx.arc(c.x - 3, c.y - 3, 1.6, 0, 6.283); ctx.fill();
+      ctx.beginPath(); ctx.arc(c.x + 3, c.y - 3, 1.6, 0, 6.283); ctx.fill();
     }
+    const h = worm.segs[0];
+    if (h) {
+      const a = worm.ang;
+      const ex = Math.cos(a + 1.57) * 6, ey = Math.sin(a + 1.57) * 6;
+      ctx.fillStyle = h.armored ? C.amber : C.red;
+      ctx.beginPath(); ctx.arc(h.x + ex, h.y + ey, 2.2, 0, 6.283); ctx.fill();
+      ctx.beginPath(); ctx.arc(h.x - ex, h.y - ey, 2.2, 0, 6.283); ctx.fill();
+      ctx.fillStyle = C.red;
+      ctx.beginPath(); ctx.arc(h.x + Math.cos(a) * 22, h.y + Math.sin(a) * 22, 2.5, 0, 6.283); ctx.fill();
+      if (worm.spit > 0) {
+        ctx.fillStyle = 'rgba(56,242,138,.8)';
+        ell(h.x + Math.cos(a) * 30, h.y + Math.sin(a) * 30, 12 + Math.sin(time * 20) * 2, 9);
+        ctx.fill();
+      }
+      if (worm.lunge === 'wind') {
+        ctx.strokeStyle = 'rgba(255,74,90,.65)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([7, 8]);
+        ctx.beginPath();
+        ctx.moveTo(h.x, h.y);
+        ctx.lineTo(player.x, player.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+  }
+
+  function drawShot() {
+    if (player.shotT <= 0) return;
+    const a = player.shotA;
+    const mx = player.x + Math.cos(a) * 15, my = player.y + Math.sin(a) * 15;
+    const t = player.shotT / .1;
+    ctx.globalAlpha = t;
+    ctx.strokeStyle = C.cyan;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(mx, my);
+    ctx.lineTo(player.shotX, player.shotY);
+    ctx.stroke();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(player.shotX, player.shotY, 3, 0, 6.283);
+    ctx.fill();
+    ctx.fillStyle = C.amber;
+    ctx.beginPath();
+    ctx.arc(mx, my, 4 + t * 4, 0, 6.283);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  function drawPause() {
+    if (state !== 'play' && state !== 'paused') return;
+    const x = W - 70, y = 32;
+    ctx.fillStyle = C.white;
+    ctx.fillRect(x - 5, y - 7, 3, 14);
+    ctx.fillRect(x + 2, y - 7, 3, 14);
   }
 
   function drawParts() {
@@ -1225,8 +1293,8 @@
     drawLives();
     drawWormBar();
 
-    text('COPIAS ' + String(clones.length).padStart(2, '0'), W - 70, 30, 12, clones.length ? C.green : C.dim, 'right');
-    if (clones.length >= 7) text('¡PELIGRO!', W - 70, 48, 10, C.red, 'right');
+    text('COPIAS ' + String(clones.length).padStart(2, '0'), W - 96, 30, 12, clones.length ? C.green : C.dim, 'right');
+    if (clones.length >= 7) text('¡PELIGRO!', W - 96, 48, 10, C.red, 'right');
 
     const ready = atkCd <= 0;
     ctx.fillStyle = ready ? 'rgba(125,255,90,.16)' : 'rgba(11,25,18,.8)';
@@ -1237,21 +1305,13 @@
     ctx.fill(); ctx.stroke();
     ctx.save();
     ctx.translate(ATK_X, ATK_Y);
-    ctx.rotate(-.6);
-    ctx.strokeStyle = ready ? C.white : C.dim;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(-12, 10);
-    ctx.lineTo(8, -10);
-    ctx.stroke();
-    ctx.strokeStyle = ready ? C.cyan : C.dim;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(8, -10);
-    ctx.lineTo(16, -14);
-    ctx.stroke();
+    ctx.fillStyle = ready ? C.white : C.dim;
+    ctx.fillRect(-10, -3, 16, 4);
+    ctx.fillRect(-8, 1, 5, 7);
+    ctx.fillStyle = ready ? C.cyan : C.dim;
+    ctx.fillRect(6, -2, 5, 2);
     ctx.restore();
-    text('CORTE', ATK_X, ATK_Y + 26, 8, C.dim, 'center');
+    text('FUEGO', ATK_X, ATK_Y + 26, 8, C.dim, 'center');
     if (!ready) {
       ctx.strokeStyle = C.green;
       ctx.lineWidth = 3;
@@ -1261,7 +1321,7 @@
     }
 
     if (runT < 12) {
-      text(touch ? 'JOYSTICK · BOTÓN CORTE' : 'WASD / FLECHAS · ESPACIO / CLIC PARA CORTAR', W / 2, H - 68, 11, 'rgba(247,240,223,.55)', 'center');
+      text(touch ? 'JOYSTICK · BOTÓN FUEGO' : 'WASD / FLECHAS · ESPACIO / CLIC PARA DISPARAR', W / 2, H - 68, 11, 'rgba(247,240,223,.55)', 'center');
     }
   }
 
@@ -1336,13 +1396,13 @@
 
     text('MOVER', W / 2 - 150, 284, 17, C.white, 'center');
     text('WASD / flechas / joystick', W / 2 - 150, 304, 11, C.dim, 'center');
-    text('CORTAR', W / 2 + 150, 284, 17, C.green, 'center');
+    text('DISPARAR', W / 2 + 150, 284, 17, C.green, 'center');
     text('espacio / clic / botón', W / 2 + 150, 304, 11, C.dim, 'center');
     ctx.fillStyle = 'rgba(255,255,255,.15)';
     ctx.fillRect(W / 2, 274, 2, 42);
     text('Cada golpe del gusano: −1 vida y nace una copia tuya.', W / 2, 336, 12, C.white, 'center');
-    text('Cada corte: el gusano se acorta y disuelve una copia.', W / 2, 356, 12, C.green, 'center');
-    text('La cabeza está blindada hasta cortar el cuerpo.', W / 2, 376, 12, C.green, 'center');
+    text('Cada disparo: el gusano se acorta y disuelve una copia.', W / 2, 356, 12, C.green, 'center');
+    text('La linterna apunta al gusano; los destellos revelan la sala.', W / 2, 376, 12, C.green, 'center');
 
     const mx = W / 2 - 229, my = 408, mw = 146, gap = 10;
     for (let i = 0; i < 3; i++) {
@@ -1363,12 +1423,23 @@
     ctx.stroke();
     text('ENTRAR AL LABORATORIO', W / 2, 482, 20, C.white, 'center');
     ctx.globalAlpha = 1;
+  }
 
-    const b = bestFor();
-    text('MEJOR ' + D.name + ': ' + (b ? b.r + ' · ' + fmt(b.t) : '—'), W / 2, 512, 11, C.dim, 'center');
-    if (window.innerWidth < window.innerHeight) {
-      text('Gira el teléfono para verlo mejor', W / 2, 530, 9, 'rgba(247,240,223,.45)', 'center');
-    }
+  function shareResult(r) {
+    const txt = 'MIMESIS · ' + D.name + ' · Rango ' + r + ' · ' + fmt(runT) + ' · ' + cuts + ' disparos · ' + dissolved + ' copias disueltas — ' + location.href;
+    shareT = 1.6;
+    try {
+      if (navigator.share) navigator.share({ title: 'MIMESIS', text: txt, url: location.href }).catch(() => {});
+      else if (navigator.clipboard) navigator.clipboard.writeText(txt).catch(() => {});
+    } catch (e) {}
+  }
+
+  function drawShare(y) {
+    ctx.fillStyle = 'rgba(3,8,6,.8)';
+    rr(W / 2 - 150, y, 300, 32, 10); ctx.fill();
+    ctx.strokeStyle = 'rgba(141,232,255,.55)';
+    ctx.lineWidth = 2; ctx.stroke();
+    text(shareT > 0 ? '¡LISTO!' : 'COMPARTIR RESULTADO', W / 2, y + 21, 15, C.cyan, 'center');
   }
 
   function drawWin() {
@@ -1387,25 +1458,19 @@
     text(r, W / 2, 260, 78, C.green, 'center', SANS);
     text('RANGO', W / 2, 284, 11, C.dim, 'center');
 
-    text(fmt(runT) + '  ·  ' + lives + ' VIDAS  ·  ' + cuts + ' CORTES  ·  ' + dissolved + ' COPIAS DISUELTAS', W / 2, 330, 13, C.white, 'center');
-    const bw = bestFor();
-    text(newBest ? '¡NUEVO RÉCORD!' : 'MEJOR: ' + (bw ? bw.r + ' · ' + fmt(bw.t) : '—'), W / 2, 362, 13, newBest ? C.cyan : C.dim, 'center');
+    text(fmt(runT) + '  ·  ' + lives + ' VIDAS  ·  ' + cuts + ' DISPAROS  ·  ' + dissolved + ' COPIAS DISUELTAS', W / 2, 330, 13, C.white, 'center');
+
+    drawShare(396);
 
     const a = .78 + .22 * Math.sin(time * 4);
     ctx.globalAlpha = a;
-    text('TOCA PARA ELEGIR MODO', W / 2, 432, 21, C.green, 'center');
+    text('TOCA PARA ELEGIR MODO', W / 2, 470, 21, C.green, 'center');
     ctx.globalAlpha = 1;
   }
 
   function drawDead() {
     ctx.fillStyle = 'rgba(3,8,6,.8)';
     ctx.fillRect(0, 0, W, H);
-    for (let i = 0; i < 26; i++) {
-      ctx.globalAlpha = rnd(.02, .1);
-      ctx.fillStyle = Math.random() < .5 ? C.red : C.green;
-      ctx.fillRect(rnd(0, W), rnd(0, H), rnd(20, 130), rnd(1, 3));
-    }
-    ctx.globalAlpha = 1;
 
     ctx.textAlign = 'center';
     ctx.font = `900 58px ${SANS}`;
@@ -1414,16 +1479,16 @@
     ctx.strokeText('TE COPIARON', W / 2, 160);
     ctx.fillStyle = C.white;
     ctx.fillText('TE COPIARON', W / 2, 160);
-    text(D.name + ' · AHORA HAY ' + D.lives + ' DE TI', W / 2, 190, 14, C.green, 'center');
+    text(D.name + ' · AHORA HAY ' + (clones.length + 1) + ' DE TI', W / 2, 190, 14, C.green, 'center');
 
     text(lastHit === 'clone' ? 'TU PROPIA COPIA TE ALCANZÓ' : lastHit === 'slime' ? 'LA BABA TE HIZO UNA COPIA' : 'EL GUSANO TE HIZO UNA COPIA', W / 2, 236, 13, C.dim, 'center');
-    text(fmt(runT) + '  ·  ' + cuts + ' CORTES  ·  ' + dissolved + ' COPIAS DISUELTAS', W / 2, 282, 13, C.white, 'center');
-    const bd = bestFor();
-    text('MEJOR: ' + (bd ? bd.r + ' · ' + fmt(bd.t) : '—'), W / 2, 316, 13, C.dim, 'center');
+    text(fmt(runT) + '  ·  ' + cuts + ' DISPAROS  ·  ' + dissolved + ' COPIAS DISUELTAS', W / 2, 282, 13, C.white, 'center');
+
+    drawShare(350);
 
     const a = .8 + .2 * Math.sin(time * 4);
     ctx.globalAlpha = a;
-    text('TOCA PARA ELEGIR MODO', W / 2, 410, 21, C.green, 'center');
+    text('TOCA PARA ELEGIR MODO', W / 2, 420, 21, C.green, 'center');
     ctx.globalAlpha = 1;
   }
 
@@ -1439,6 +1504,17 @@
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = '#020604';
     ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+    if (window.innerWidth < window.innerHeight) {
+      ctx.textAlign = 'center';
+      ctx.fillStyle = C.green;
+      ctx.font = `900 ${Math.round(cvs.width * .07)}px ${SANS}`;
+      ctx.fillText('GIRA TU TELÉFONO', cvs.width / 2, cvs.height / 2);
+      ctx.fillStyle = C.white;
+      ctx.font = `${Math.round(cvs.width * .035)}px ${SANS}`;
+      ctx.fillText('El laboratorio es horizontal', cvs.width / 2, cvs.height / 2 + cvs.width * .07);
+      return;
+    }
 
     ctx = pctx;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -1456,7 +1532,6 @@
     if (sx || sy) ctx.translate(sx, sy);
     drawBg();
     drawArena();
-    drawSlimes();
     drawParts();
     ctx.restore();
 
@@ -1464,11 +1539,23 @@
     ctx.setTransform(view.dpr * view.s, 0, 0, view.dpr * view.s, view.dpr * view.ox, view.dpr * view.oy);
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(pix, 0, 0, PW, PH, 0, 0, W, H);
-    ctx.save();
-    if (sx || sy) ctx.translate(sx, sy);
-    drawEntities();
-    ctx.restore();
-    ctx.imageSmoothingEnabled = true;
+    if (state !== 'menu') {
+      ctx.save();
+      if (sx || sy) ctx.translate(sx, sy);
+      drawEntities();
+      ctx.restore();
+    }
+
+    if (state === 'play' || state === 'paused') {
+      drawDarkness(sx, sy);
+      ctx = screen;
+      ctx.setTransform(view.dpr * view.s, 0, 0, view.dpr * view.s, view.dpr * view.ox, view.dpr * view.oy);
+      ctx.imageSmoothingEnabled = false;
+      drawSlimes();
+      drawBeam();
+      drawGlows();
+      drawShot();
+    }
 
     drawTexts();
 
@@ -1491,6 +1578,7 @@
     else if (state === 'paused') drawPaused();
 
     drawMute();
+    drawPause();
   }
 
   /* ---------------------------------------------------------------- input */
@@ -1547,10 +1635,14 @@
   cvs.addEventListener('pointerdown', e => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     e.preventDefault();
+    if (window.innerWidth < window.innerHeight) return;
     ensureAudio();
     const p = toLocal(e);
     if (p.x < 0 || p.x > W || p.y < 0 || p.y > H) return;
-    if (p.x > W - 66 && p.y < 64) { toggleMute(); return; }
+    if (p.y < 64 && p.x > W - 52) { toggleMute(); return; }
+    if ((state === 'play' || state === 'paused') && p.y < 64 && p.x > W - 84 && p.x < W - 52) {
+      state = state === 'play' ? 'paused' : 'play'; return;
+    }
     if (state === 'menu') {
       const mx = W / 2 - 229, my = 408, mw = 146, gap = 10;
       for (let i = 0; i < 3; i++) {
@@ -1563,7 +1655,14 @@
       }
       startGame(); return;
     }
-    if (state === 'dead' || state === 'win') { if (time > .35) state = 'menu'; return; }
+    if (state === 'dead' || state === 'win') {
+      const sy = state === 'win' ? 396 : 350;
+      if (p.x >= W / 2 - 150 && p.x <= W / 2 + 150 && p.y >= sy && p.y <= sy + 32) {
+        shareResult(rankFor(runT, lives)); return;
+      }
+      if (time > .35) state = 'menu';
+      return;
+    }
     if (state === 'paused') { state = 'play'; return; }
     if (state !== 'play') return;
 
