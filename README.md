@@ -155,18 +155,6 @@ El **cover** de Open2 se sube aparte; no forma parte del build de 32 KB y se man
 
 ---
 
-## Checklist antes de enviar
-
-- [ ] Repo público creado **durante** el reto.
-- [ ] GitHub Pages activo y link probado en escritorio y teléfono.
-- [ ] `npm run build` termina sin error y muestra menos de 32,768 bytes.
-- [ ] Probar mover/encarar, disparar, recargar, copias, copias de fase, baba, muros/cobertura, linterna, destello, pausa, mute, portrait, victoria, derrota y reinicio en móvil.
-- [ ] Crear cuenta de Open2 y enviar en `https://app.open2.io/play` antes del **13 nov 2026, 23:59 (Guatemala)**.
-- [ ] Subir el cover en Open2.
-- [ ] Votación: **14–20 nov**; el más votado gana.
-
----
-
 ## Créditos
 
 Hecho para el reto **build&play** de Open2 (Build & Pitch · UVG · 21 nov 2026).
