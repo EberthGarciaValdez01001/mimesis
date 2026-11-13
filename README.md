@@ -157,17 +157,6 @@ El repo es público y GitHub Pages sirve la rama `main` desde la raíz. `game.mi
 
 ---
 
-## Checklist antes de enviar
-
-- [x] Repo público creado **durante** el reto.
-- [x] GitHub Pages activo y link probado en escritorio y teléfono.
-- [x] `npm run build` termina sin error y muestra menos de 32.768 bytes.
-- [ ] Probar mover/girar, disparar, recargar, melee, loot, cofres, tarjeta, escaleras, copias, destello, pausa, mute, portrait, victoria, derrota y reinicio en móvil.
-- [ ] Crear cuenta de Open2 y enviar en `https://app.open2.io/play` antes del **13 nov 2026, 23:59 (Guatemala)**.
-- [ ] Subir el cover en Open2.
-- [ ] Votación: **14–20 nov**.
-
----
 
 ## Créditos
 
