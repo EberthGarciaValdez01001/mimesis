@@ -1,74 +1,14 @@
-# MIMESIS
+# MIMESIS: DESCENSO
 
-> El gusano te copia. Tienes 6 vidas en Medio, una linterna y una pistola.
+> El laboratorio se hundió. Baja por los sectores, saquea lo que quede y no dejes que te copie.
 
-Boss fight biolab para el reto **build&play** de Open2 / Build & Pitch 2026.
+Dungeon crawler en **primera persona, por turnos y con permadeath** para el reto **build&play** de Open2 / Build & Pitch 2026.
 
-El laboratorio se quedó a oscuras. La linterna apunta **hacia donde te mueves**; cada **6–9 s** un destello revela la sala entera durante ~1 s y vuelve la oscuridad. Tienes **6 vidas en Medio** (8 en Fácil, 4 en Difícil). Cada golpe del gusano te quita una vida y crea una **copia tuya** que te persigue; cada disparo que destruye un segmento **disuelve una copia**. La pistola tiene **6 balas y recarga de 1.1 s**.
-
-**32 KB · pixel art · sin librerías · sin imágenes · sin audio · sin fuentes externas.**
-Todo se dibuja y suena con código. El mundo se renderiza a 480×270 y se escala con nearest-neighbor; el HUD y los menús quedan nítidos.
+Tres sectores procedurales, linterna, pistola, tarjetas maestras, cofres y un **Rey Hueso** que convierte cada golpe en una copia tuya. **32 KB, sin librerías, sin imágenes, sin audio y sin fuentes externas.** Todo se dibuja y suena con código.
 
 ---
 
 ## Jugar
-
-- **Modo:** elige **Fácil / Medio / Difícil** en el menú con clic/tap o `1` / `2` / `3`. Se guarda para la próxima.
-- **Moverte:** `WASD` / flechas / joystick virtual.
-- **Apuntar:** mueve el **mouse**; la linterna y la pistola lo siguen. En móvil, la linterna apunta hacia donde te mueves.
-- **Disparar:** clic izquierdo (o mantenerlo), `Espacio`, `J`, `K` o el botón **FUEGO**.
-- **Recargar:** automático al gastar las 6 balas; tarda **1.1 s**.
-- **Pausa:** `P` o `Esc`, o el botón de pausa junto al altavoz.
-- **Silenciar:** `M` o el icono del altavoz.
-- **Girar el teléfono:** el juego es horizontal; si abres el link en vertical verás el aviso para girar.
-
-La pistola **dispara hacia el mouse** en escritorio; en móvil el botón **FUEGO** autoapunta al segmento más cercano dentro del cono. Los **dos muros permanentes** bloquean al agente, a las copias, a la baba, al gusano y **también la línea de disparo**: si hay un muro entre tú y el gusano, el disparo no pasa. El gusano los rodea y su lunge se corta. Para disparar tienes que apuntar; para esquivar, moverte. El loop es “apuntar, disparar, recargar, mover”.
-
-La **cabeza está blindada** hasta que destruyas los 9 segmentos del cuerpo. Después queda expuesta y son **2 disparos finales**.
-
-Al terminar se muestra el **rango** (S/A/B/C), el tiempo, los disparos y las copias disueltas.
-
----
-
-## Modos
-
-| Modo | Vidas | Copias | Vel. gusano | Invuln. | Lunge | Baba | Alcance | Cadencia | Vel. copias |
-|---|---|---|---|---|---|---|---|---|---|
-| **Fácil** | 8 | máx. 5 | 85% | 1.6 s | 4.4 s | 3.6 s | 230 px | 0.32 s | 65% |
-| **Medio** | 6 | máx. 8 | 115% | 1.1 s | 3.2 s | 2.4 s | 195 px | 0.38 s | 75% |
-| **Difícil** | 4 | máx. 10 | 130% | 0.8 s | 2.4 s | 1.8 s | 160 px | 0.44 s | 85% |
-
-La velocidad del gusano es relativa a su base; la de las copias, a la tuya. En la fase final los tiempos de lunge y baba bajan hasta **2.1 s** y **1.5 s**. La recarga es igual en todos los modos: **6 balas + 1.1 s**.
-
-## Reglas
-
-| Regla | Detalle |
-|---|---|
-| **Gusano** | 10 segmentos: 9 de cuerpo + 1 cabeza |
-| **Disparos** | 2 por segmento = **20 impactos** |
-| **Cabeza** | Blindada hasta destruir el cuerpo; luego 2 disparos |
-| **Vidas** | 8 / 6 / 4 según el modo, sin curación |
-| **Golpe del gusano** | Contacto o baba = **−1 vida + 1 copia** |
-| **Golpe de una copia** | **−1 vida**, pero no crea otra copia |
-| **Copias** | Invulnerables, persecución directa al **65–85%** de tu velocidad, máximo **5 / 8 / 10** |
-| **Copias de fase** | Nace una al llegar a cuerpo 7, cuerpo 4 y cabeza expuesta |
-| **Muros** | 2 barreras permanentes; bloquean al agente, las copias, la baba, el gusano (cabeza y cuerpo) y los disparos; el gusano las rodea y su lunge se corta |
-| **Disparo** | Hitscan; en escritorio apunta al mouse y en móvil autoapunta; los muros bloquean la línea; destruye el segmento y disuelve la copia más cercana |
-| **Linterna** | Cono de ~63° y 300 px en la dirección en la que te mueves; luz mínima de ~40 px en el cuerpo |
-| **Destello** | Cada 6–9 s revela la sala durante ~1 s; durante el destello la pistola puede apuntar a cualquier segmento dentro del alcance |
-| **Recarga** | 6 balas; 1.1 s; no se puede disparar mientras recarga |
-| **Victoria** | Destruir los 10 segmentos |
-| **Derrota** | Quedarte sin vidas: “TE COPIARON” |
-
-### El loop
-
-> El gusano te toca → pierdes una vida y nace tu copia → encaras y disparas un segmento → se disuelve una copia → recargas → el gusano se acorta y se enfurece → llegan las copias de fase → repites.
-
-Disparar es progreso **y** limpieza. Sin esa regla, el juego se volvería imposible muy rápido.
-
----
-
-## Correr en local
 
 ```bash
 npm install
@@ -77,26 +17,106 @@ npm run serve
 # abre http://localhost:8002
 ```
 
-`npm run build` minifica `src/game.js` a `game.min.js` y audita el peso total. Falla si `index.html + game.min.js` supera los 32,768 bytes.
-
 Para desarrollar sin minificar:
 
 ```
 http://localhost:8002/src/dev.html
 ```
 
+**Objetivo:** bajar por B1, B2 y B3. En B1 y B2 necesitas la **tarjeta maestra** para usar las escaleras. En B3 **El Rey Hueso** bloquea la salida: elimínalo y extráete.
+
 ---
 
-## Reglas del reto
+## Controles
+
+| Acción | Escritorio | Móvil |
+|---|---|---|
+| Avanzar / retroceder | `W` / `S` o `↑` / `↓` | botones ▲ / ▼ o swipe vertical |
+| Girar 90° | `A` / `D` o `←` / `→` | botones ◀ / ▶ o swipe horizontal |
+| Moverse de lado | `Q` / `E` | — |
+| Disparar | clic, `Espacio` | botón **FUEGO** o tap |
+| Recargar | `R` | botón **RECARGA** |
+| Interactuar / abrir | `F` | botón **ACCIÓN** (contextual) |
+| Usar objeto | `1` botiquín · `2` cargador · `3` placa | **USAR** (cuando no hay nada que abrir) usa botiquín o placa |
+| Pausa | `P` o `Esc` | botón `II` |
+| Silencio | `M` | botón `M` |
+
+El juego es horizontal. Si abres el link en vertical verás el aviso para girar el teléfono.
+
+---
+
+## Cómo se juega
+
+- **Todo es por turnos.** Cada paso, disparo, recarga o interacción consume un turno; después se mueven los enemigos. Girar es gratis.
+- **La linterna apunta hacia delante.** Lo que queda fuera del cono se ve como silueta; los enemigos delatan sus ojos. Cada **7–11 turnos** un destello de emergencia revela la sala entera durante un instante.
+- **La pistola dispara al centro de la mira.** Si hay una pared entre tú y el objetivo, el disparo se pierde. Recargar consume un cargador y un turno.
+- **La mazmorra se revela en el minimapa** al explorarla. Las escaleras y la tarjeta aparecen cuando las ves.
+- **Las copias son frágiles.** Tienen 1 de vida: un disparo o un golpe las disuelve. El Rey Hueso invoca una al iniciar el combate y otra cada vez que te golpea; intentan nacer delante de ti para que las veas. Elimínalas antes de que te acorralen.
+- **La barra de inventario** (arriba a la izquierda) muestra lo que tienes: botiquines, cargadores y placas. Al recoger algo, el mensaje confirma el total, por ejemplo `BOTIQUÍN +1 (×3)`.
+- **Permadeath.** Si te quedan 0 vidas, se acabó: el resumen muestra sector, turnos, tiempo, bajas, precisión, puntaje y rango S/A/B/C. La mejor marca se guarda en `localStorage`.
+
+### Reglas
+
+| Regla | Detalle |
+|---|---|
+| **Sectores** | 3: B1 contención, B2 incubación, B3 El Rey Hueso |
+| **Mazmorra** | 24×24, salas y pasillos procedurales, camino garantizado |
+| **Turnos** | Mover, disparar, recargar, usar o interactuar consume turno; girar no |
+| **Vida** | 10 / 8 / 6 según el protocolo; sin regeneración |
+| **Pistola** | 5–8 balas por cargador; recarga de 1 turno; 2 de daño |
+| **Melee** | Caminar contra un enemigo o prop lo golpea; 1 de daño |
+| **Golpe recibido** | 1 de daño (2 el jefe y los monstruos); como máximo un golpe por turno |
+| **Copias** | El Rey Hueso invoca una al iniciar el combate y otra al golpearte; máximo 3; intentan nacer delante de ti; **1 disparo o 1 golpe las disuelve**; también mueren si matas al Rey Hueso |
+| **Tarjeta** | Obligatoria en B1 y B2 para bajar |
+| **Salida B3** | Bloqueada hasta eliminar al Rey Hueso |
+| **Victoria** | Extraerte en B3 |
+| **Derrota** | Quedarte sin vida |
+
+### Protocolos
+
+| Protocolo | Vida | Balas | Cargadores | Botiquines | Enemigos |
+|---|---|---|---|---|---|
+| **Fácil** | 10 | 8 | 3 | 2 | 72% |
+| **Medio** | 8 | 6 | 2 | 1 | 100% |
+| **Difícil** | 6 | 5 | 1 | 1 | 138% |
+
+---
+
+## Enemigos
+
+| Enemigo | Vida | Comportamiento |
+|---|---|---|
+| **Murciélago** | 1 | Vuela, es rápido y frágil; avanza 2 casillas cuando está lejos |
+| **Esqueleto** | 2 | Guerrero medieval cuerpo a cuerpo |
+| **Esqueleto arquero** | 2 | Se queda a distancia y dispara si te ve |
+| **Araña** | 2 | Rápida; avanza 2 casillas cuando está lejos |
+| **Monstruo** | 4 | Araña gigante lenta; golpea por 2 y se mueve en turnos alternos |
+| **Copia** | 1 | Persigue directo; aparece al iniciar el combate o cuando El Rey Hueso te golpea; intenta nacer delante de ti; un disparo o un golpe la disuelve |
+| **Rey Hueso** | 12–14 | Jefe de B3; invoca una copia al iniciar, golpea, lanza magia y crea más copias |
+
+## Objetos
+
+| Objeto | Efecto |
+|---|---|
+| **Botiquín** | +4 vida |
+| **Cargador** | Llena el cargador |
+| **Placa** | +2 vida máxima y +2 vida |
+| **Tarjeta maestra** | Abre las escaleras de B1 y B2 |
+
+Los frascos y cajas se rompen y sueltan objetos; los cofres se abren con `F`. Los enemigos también pueden soltar loot.
+
+---
+
+## 32 KB y reglas del reto
 
 | Regla | Cómo se cumple |
 |---|---|
-| **32 KB máximo, sin comprimir** | `index.html` (642 B) + `game.min.js` (31,897 B) = **32,539 bytes** (99.3% del límite). `npm run build` lo verifica. |
-| **Solo código propio** | Canvas 2D, WebAudio y `localStorage`. Sin engines ni frameworks. Terser solo se usa en build; no se sirve. |
-| **Cero assets** | No hay imágenes, audio, fuentes ni base64. Todo el arte es procedural y todo el sonido se sintetiza con osciladores y ruido. |
-| **Repo nuevo y link jugable** | Este repo + GitHub Pages (ver abajo). |
-| **Original** | Jefe, mecánica, personaje y escenario propios. Sin personajes ni assets de otros juegos. |
-| **Un juego por cuenta** | Es el **primer envío** de la cuenta de Open2. |
+| **32 KB máximo, sin comprimir** | `index.html` + `game.min.js` = **32,549 bytes** (99,3% del límite). `npm run build` lo verifica y falla si se pasa. |
+| **Solo código propio** | Canvas 2D, WebAudio y `localStorage`. Sin engines, frameworks ni dependencias en runtime. Terser solo se usa en build. |
+| **Cero assets** | No hay imágenes, audio, fuentes ni base64. Texturas, sprites y sonido se generan en código. |
+| **Repo nuevo y link jugable** | Este repo + GitHub Pages (pendiente de subir). |
+| **Originalidad** | Género de dungeon crawler en primera persona, pero jefe, personaje, escenario, arte y mecánicas propias. No usa nombres, personajes ni assets de Gloomgrave. |
+| **Un juego por cuenta** | Primer envío de la cuenta de Open2. |
 
 ---
 
@@ -109,7 +129,7 @@ http://localhost:8002/src/dev.html
 ├── build.mjs         # minifica + audita bytes
 ├── package.json
 ├── src/
-│   ├── game.js       # fuente legible (no se descarga en producción)
+│   ├── game.js       # fuente legible
 │   └── dev.html      # harness de desarrollo
 └── README.md
 ```
@@ -118,43 +138,47 @@ http://localhost:8002/src/dev.html
 
 ## Cómo está hecho
 
-- **Canvas 2D** a 960×540 lógicos, escalado con `devicePixelRatio` y letterbox.
-- **Render pixel-art:** el mundo **y las entidades** se dibujan en un buffer de **480×270** y se amplían con nearest-neighbor; el HUD, los menús y los textos se dibujan nítidos a 960×540.
-- **Sprites procedurales:** el agente (32×32 lógicos → 16×16 en el buffer) con pistola, las copias y el gusano (cabeza 60×60 → 30×30, segmentos 42×42 → 21×21) se generan en canvas al iniciar y se dibujan en el buffer. No hay PNGs ni assets.
-- **Oscuridad y linterna:** el buffer de 480×270 se reutiliza como máscara. Se rellena de negro y se perfora con `destination-out` para el cono de la linterna y una luz mínima alrededor del cuerpo; luego se pinta sobre la escena. El destello global baja la opacidad y añade un flash blanco suave.
-- **Visibilidad real:** la pistola solo puede apuntar a segmentos dentro del cono, dentro de la luz del cuerpo o durante el destello. Las copias y el gusano se delatan con ojos brillantes; la baba y el telegrafiado del lunge se dibujan por encima de la oscuridad.
-- **Pistola con mouse:** en escritorio apunta al mouse y la linterna lo sigue; en móvil autoapunta al segmento más cercano. Disparo hitscan con raycast, bloqueo por muros, trazadora, muzzle flash, chispa de impacto, retroceso y sonido.
-- **Recarga:** 6 balas, 1.1 s, anillo de recarga y etiqueta `RECARGA`. La recarga es la ventana en la que el gusano y las copias te castigan.
-- **Gusano 1.5×:** cabeza 60×60 en pantalla (30×30 en el buffer), segmentos 42×42 (21×21), radios 28/22 y separación 42. El cuerpo sigue a la cabeza con una restricción de distancia; cada segmento se puede destruir y la cadena se reconecta.
-- **Copias:** se crean alrededor del jugador al recibir un golpe y al cambiar de fase; se forman durante un tiempo, persiguen directo al 65–85% de la velocidad y son invulnerables. El jugador tiene invulnerabilidad temporal.
-- **Muros permanentes:** 2 rectángulos con colisión para agente, copias, baba, todos los segmentos del gusano y los disparos; la cabeza se desliza para rodearlos y el lunge se corta. Los segmentos del cuerpo no entran.
-- **Baba:** proyectiles telegrafiados desde la boca; si aciertan, cuentan como golpe del gusano.
-- **Fases:** el gusano acelera y ataca más seguido a medida que pierde segmentos; la cabeza expuesta es la fase final.
-- **Audio sintetizado:** hum de laboratorio, pistola, impactos, recarga, copias, baba, destello, alarma y latido cuando quedan pocas vidas.
-- **Sin dependencias en runtime.**
+- **Raycaster propio (DDA)** a 320×180, escalado nearest-neighbor a 960×540. El HUD y los menús se dibujan nítidos a 960×540.
+- **Texturas procedurales** de 16×16 para paredes, suelo y techo, con 8 niveles de iluminación precalculados. La luz combina cono de linterna, distancia, parpadeo y destellos.
+- **Sprites procedurales** para enemigos, props, objetos, escalera y pistola, dibujados como billboards con z-buffer para que las paredes los tapen. Variantes de oscuridad y ojos brillantes para las siluetas.
+- **Mazmorra procedural** de 24×24: salas sin solaparse, pasillos en L, conexiones extra para crear bucles, texturas de pared por sector y colocación garantizada de inicio, tarjeta, salida, props, loot y enemigos.
+- **Turnos** con animación suave de movimiento y giro. La IA persigue en línea recta, rodea obstáculos y ataca al quedar adyacente. Los ojos disparan si tienen línea de visión.
+- **Copias** que nacen delante del jugador al iniciar el combate y cuando El Rey Hueso acierta; persiguen al 100% de la velocidad y se disuelven de un disparo o un golpe; también desaparecen al matar al jefe.
+- **Audio sintetizado** con osciladores y ruido: pasos, disparo, recarga, impactos, dolor, recogida, cofre, puerta, destello, copia, victoria y derrota.
+- **Persistencia** de protocolo, silencio y mejor marca con `localStorage`.
 
 ---
 
-## Deploy en GitHub Pages
+## Deploy (todavía no se ha subido nada)
 
-1. Crea un repositorio **público** nuevo, por ejemplo `mimesis`.
+1. Crea un repositorio **público** nuevo, por ejemplo `mimesis-descenso`.
 2. Conecta y sube:
-
-```bash
-git remote add origin https://github.com/TU-USUARIO/mimesis.git
-git branch -M main
-git push -u origin main
-```
-
+   ```bash
+   git remote add origin https://github.com/TU-USUARIO/mimesis-descenso.git
+   git branch -M main
+   git push -u origin main
+   ```
 3. En GitHub: **Settings → Pages → Build and deployment → Deploy from a branch → `main` / `(root)`**.
-4. El juego queda en `https://TU-USUARIO.github.io/mimesis/`.
+4. El juego queda en `https://TU-USUARIO.github.io/mimesis-descenso/`.
 
-`game.min.js` ya está commiteado. Si cambias `src/game.js`, corre `npm run build` y commitea el nuevo `game.min.js`.
+`game.min.js` está commiteado. Si cambias `src/game.js`, corre `npm run build` y commitea el nuevo `game.min.js`.
 
-El **cover** de Open2 se sube aparte; no forma parte del build de 32 KB y se mantiene fuera del repo del juego para no romper la regla de “cero assets”.
+---
+
+## Checklist antes de enviar
+
+- [ ] Repo público creado **durante** el reto.
+- [ ] GitHub Pages activo y link probado en escritorio y teléfono.
+- [ ] `npm run build` termina sin error y muestra menos de 32.768 bytes.
+- [ ] Probar mover/girar, disparar, recargar, melee, loot, cofres, tarjeta, escaleras, copias, destello, pausa, mute, portrait, victoria, derrota y reinicio en móvil.
+- [ ] Crear cuenta de Open2 y enviar en `https://app.open2.io/play` antes del **13 nov 2026, 23:59 (Guatemala)**.
+- [ ] Subir el cover en Open2.
+- [ ] Votación: **14–20 nov**.
 
 ---
 
 ## Créditos
 
 Hecho para el reto **build&play** de Open2 (Build & Pitch · UVG · 21 nov 2026).
+
+Inspirado en el género de dungeon crawlers en primera persona y roguelikes clásicos. Sin personajes, nombres, arte ni assets de otros juegos.

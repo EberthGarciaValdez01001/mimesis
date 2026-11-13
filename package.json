@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "MIMESIS — boss fight biolab para build&play (32 KB, sin librerías, sin assets)",
+  "description": "MIMESIS: DESCENSO — dungeon crawler biolab en primera persona para build&play (32 KB, sin librerías, sin assets)",
   "scripts": {
     "build": "node build.mjs",
     "serve": "python3 -m http.server 8002"
