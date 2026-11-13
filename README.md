@@ -114,7 +114,7 @@ Los frascos y cajas se rompen y sueltan objetos; los cofres se abren con `F`. Lo
 | **32 KB máximo, sin comprimir** | `index.html` + `game.min.js` = **32,549 bytes** (99,3% del límite). `npm run build` lo verifica y falla si se pasa. |
 | **Solo código propio** | Canvas 2D, WebAudio y `localStorage`. Sin engines, frameworks ni dependencias en runtime. Terser solo se usa en build. |
 | **Cero assets** | No hay imágenes, audio, fuentes ni base64. Texturas, sprites y sonido se generan en código. |
-| **Repo nuevo y link jugable** | Este repo + GitHub Pages (pendiente de subir). |
+| **Repo nuevo y link jugable** | [eberthgarciavaldez01001.github.io/mimesis](https://eberthgarciavaldez01001.github.io/mimesis/) |
 | **Originalidad** | Género de dungeon crawler en primera persona, pero jefe, personaje, escenario, arte y mecánicas propias. No usa nombres, personajes ni assets de Gloomgrave. |
 | **Un juego por cuenta** | Primer envío de la cuenta de Open2. |
 
@@ -142,34 +142,26 @@ Los frascos y cajas se rompen y sueltan objetos; los cofres se abren con `F`. Lo
 - **Texturas procedurales** de 16×16 para paredes, suelo y techo, con 8 niveles de iluminación precalculados. La luz combina cono de linterna, distancia, parpadeo y destellos.
 - **Sprites procedurales** para enemigos, props, objetos, escalera y pistola, dibujados como billboards con z-buffer para que las paredes los tapen. Variantes de oscuridad y ojos brillantes para las siluetas.
 - **Mazmorra procedural** de 24×24: salas sin solaparse, pasillos en L, conexiones extra para crear bucles, texturas de pared por sector y colocación garantizada de inicio, tarjeta, salida, props, loot y enemigos.
-- **Turnos** con animación suave de movimiento y giro. La IA persigue en línea recta, rodea obstáculos y ataca al quedar adyacente. Los ojos disparan si tienen línea de visión.
+- **Turnos** con animación suave de movimiento y giro. La IA persigue en línea recta, rodea obstáculos y ataca al quedar adyacente. Los esqueletos arqueros disparan si tienen línea de visión.
 - **Copias** que nacen delante del jugador al iniciar el combate y cuando El Rey Hueso acierta; persiguen al 100% de la velocidad y se disuelven de un disparo o un golpe; también desaparecen al matar al jefe.
 - **Audio sintetizado** con osciladores y ruido: pasos, disparo, recarga, impactos, dolor, recogida, cofre, puerta, destello, copia, victoria y derrota.
 - **Persistencia** de protocolo, silencio y mejor marca con `localStorage`.
 
 ---
 
-## Deploy (todavía no se ha subido nada)
+## Link público
 
-1. Crea un repositorio **público** nuevo, por ejemplo `mimesis-descenso`.
-2. Conecta y sube:
-   ```bash
-   git remote add origin https://github.com/TU-USUARIO/mimesis-descenso.git
-   git branch -M main
-   git push -u origin main
-   ```
-3. En GitHub: **Settings → Pages → Build and deployment → Deploy from a branch → `main` / `(root)`**.
-4. El juego queda en `https://TU-USUARIO.github.io/mimesis-descenso/`.
+**Jugalo en:** [https://eberthgarciavaldez01001.github.io/mimesis/](https://eberthgarciavaldez01001.github.io/mimesis/)
 
-`game.min.js` está commiteado. Si cambias `src/game.js`, corre `npm run build` y commitea el nuevo `game.min.js`.
+El repo es público y GitHub Pages sirve la rama `main` desde la raíz. `game.min.js` está commiteado. Si cambias `src/game.js`, corre `npm run build`, commitea el nuevo `game.min.js` y pushea.
 
 ---
 
 ## Checklist antes de enviar
 
-- [ ] Repo público creado **durante** el reto.
-- [ ] GitHub Pages activo y link probado en escritorio y teléfono.
-- [ ] `npm run build` termina sin error y muestra menos de 32.768 bytes.
+- [x] Repo público creado **durante** el reto.
+- [x] GitHub Pages activo y link probado en escritorio y teléfono.
+- [x] `npm run build` termina sin error y muestra menos de 32.768 bytes.
 - [ ] Probar mover/girar, disparar, recargar, melee, loot, cofres, tarjeta, escaleras, copias, destello, pausa, mute, portrait, victoria, derrota y reinicio en móvil.
 - [ ] Crear cuenta de Open2 y enviar en `https://app.open2.io/play` antes del **13 nov 2026, 23:59 (Guatemala)**.
 - [ ] Subir el cover en Open2.
