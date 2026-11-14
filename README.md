@@ -54,7 +54,9 @@ El juego es horizontal. Si abres el link en vertical verás el aviso para girar 
 - **Las copias son frágiles.** Tienen 1 de vida: un disparo o un golpe las disuelve. El Rey Hueso invoca una al iniciar el combate y otra cada vez que te golpea; intentan nacer delante de ti para que las veas. Elimínalas antes de que te acorralen.
 - **La barra de inventario** (arriba a la izquierda) muestra lo que tienes: botiquines, cargadores y placas. Al recoger algo, el mensaje confirma el total, por ejemplo `BOTIQUÍN +1 (×3)`.
 - **Avisos centrales**: si la vida baja al 30% o menos, o quedan 2 balas o menos, aparece un aviso pulsante debajo de la mira. Si no quedan cargadores, avisa `¡SIN MUNICIÓN!`.
-- **Permadeath.** Si te quedan 0 vidas, se acabó: el resumen muestra sector, turnos, tiempo, bajas, precisión, puntaje y rango S/A/B/C. La mejor marca se guarda en `localStorage`.
+- **Barra del jefe**: en B3, el Rey Hueso muestra su vida en una barra roja arriba al centro.
+- **La Sombra (solo Difícil)**: al matar al Rey Hueso aparece una copia gigante invulnerable que te persigue. Si te alcanza, te mata de un golpe. La salida queda abierta: corre y extráete.
+- **Permadeath.** Si te quedan 0 vidas, se acabó: el resumen muestra sector, turnos, tiempo, bajas, precisión, puntaje y rango S/A/B/C.
 
 ### Reglas
 
@@ -66,9 +68,11 @@ El juego es horizontal. Si abres el link en vertical verás el aviso para girar 
 | **Vida** | 10 / 8 / 6 según el protocolo; sin regeneración |
 | **Pistola** | 5–8 balas por cargador; recarga de 1 turno; 2 de daño |
 | **Melee** | Caminar contra un enemigo o prop lo golpea; 1 de daño |
-| **Golpe recibido** | 1 de daño (2 el jefe y los monstruos); como máximo un golpe por turno |
+| **Golpe recibido** | 1 de daño (2 el jefe y los monstruos); La Sombra mata de un golpe; como máximo un golpe por turno |
 | **Copias** | El Rey Hueso invoca una al iniciar el combate y otra al golpearte; máximo 3; intentan nacer delante de ti; **1 disparo o 1 golpe las disuelve**; también mueren si matas al Rey Hueso |
 | **Tarjeta** | Obligatoria en B1 y B2 para bajar |
+| **Barra del jefe** | El Rey Hueso muestra su vida arriba al centro en B3 |
+| **La Sombra** | Solo en Difícil, al matar al Rey Hueso; invulnerable, 2 casillas por turno, un golpe te mata |
 | **Salida B3** | Bloqueada hasta eliminar al Rey Hueso |
 | **Victoria** | Extraerte en B3 |
 | **Derrota** | Quedarte sin vida |
@@ -93,6 +97,7 @@ El juego es horizontal. Si abres el link en vertical verás el aviso para girar 
 | **Monstruo** | 4 | Araña gigante lenta; golpea por 2 y se mueve en turnos alternos |
 | **Copia** | 1 | Persigue directo; aparece al iniciar el combate o cuando El Rey Hueso te golpea; intenta nacer delante de ti; un disparo o un golpe la disuelve |
 | **Rey Hueso** | 12–14 | Jefe de B3; invoca una copia al iniciar, golpea, lanza magia y crea más copias |
+| **La Sombra** | ∞ | Solo en Difícil; invulnerable, persigue y mata de un golpe |
 
 ## Objetos
 
@@ -111,7 +116,7 @@ Los frascos y cajas se rompen y sueltan objetos; los cofres se abren con `F`. Lo
 
 | Regla | Cómo se cumple |
 |---|---|
-| **32 KB máximo, sin comprimir** | `index.html` + `game.min.js` = **31,574 bytes** (96,4% del límite). `npm run build` lo verifica y falla si se pasa. |
+| **32 KB máximo, sin comprimir** | `index.html` + `game.min.js` = **31,722 bytes** (96,8% del límite). `npm run build` lo verifica y falla si se pasa. |
 | **Solo código propio** | Canvas 2D, WebAudio y `localStorage`. Sin engines, frameworks ni dependencias en runtime. Terser solo se usa en build. |
 | **Cero assets** | No hay imágenes, audio, fuentes ni base64. Texturas, sprites y sonido se generan en código. |
 | **Repo nuevo y link jugable** | [eberthgarciavaldez01001.github.io/mimesis](https://eberthgarciavaldez01001.github.io/mimesis/) |
@@ -144,8 +149,8 @@ Los frascos y cajas se rompen y sueltan objetos; los cofres se abren con `F`. Lo
 - **Mazmorra procedural** de 24×24: salas sin solaparse, pasillos en L, conexiones extra para crear bucles, texturas de pared por sector y colocación garantizada de inicio, tarjeta, salida, props, loot y enemigos.
 - **Turnos** con animación suave de movimiento y giro. La IA persigue en línea recta, rodea obstáculos y ataca al quedar adyacente. Los esqueletos atacan cuerpo a cuerpo.
 - **Copias** que nacen delante del jugador al iniciar el combate y cuando El Rey Hueso acierta; persiguen al 100% de la velocidad y se disuelven de un disparo o un golpe; también desaparecen al matar al jefe.
-- **Audio sintetizado** con osciladores y ruido: música táctica de 8 bits (bajo, arpegio, bombo y hi-hat) y efectos de disparo, recarga, impacto, daño, recogida, copia, victoria y derrota.
-- **Persistencia** de protocolo, silencio y mejor marca con `localStorage`.
+- **Audio sintetizado** con osciladores y ruido: música táctica de 8 bits (bajo y arpegio) y efectos de disparo, recarga, impacto, daño, copia, victoria y derrota.
+- **Persistencia** de protocolo y silencio con `localStorage`.
 
 ---
 

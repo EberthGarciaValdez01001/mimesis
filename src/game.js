@@ -14,8 +14,8 @@
     { name: 'MEDIO', hp: 8, mag: 6, packs: 2, meds: 1, plates: 0, mul: 1 },
     { name: 'DIFÍCIL', hp: 6, mag: 5, packs: 1, meds: 1, plates: 0, mul: 1.38 }
   ];
-  const FLOORS = ['B1 · CONTENCIÓN', 'B2 · INCUBACIÓN', 'B3 · EL REY HUESO'];
-  const BEST_KEY = 'mim_best_v2', MUTE_KEY = 'mim_mute_v2', MODE_KEY = 'mim_mode_v2';
+  const FLOORS = ['B1', 'B2', 'B3'];
+  const MUTE_KEY = 'mim_mute_v2', MODE_KEY = 'mim_mode_v2';
 
   const cvs = document.getElementById('game');
   const screen = cvs.getContext('2d', { alpha: false });
@@ -306,7 +306,6 @@
   function sfxReload() { tone(280, .06, 'square', .04, 480); noise(.05, .035, 2200); }
   function sfxHit() { noise(.06, .08, 700); tone(170, .08, 'square', .05, 80); }
   function sfxHurt() { noise(.16, .1, 380); tone(120, .2, 'sawtooth', .07, 55); }
-  function sfxPick() { tone(520, .05, 'square', .035); tone(760, .06, 'square', .03); }
   function sfxClone() { noise(.24, .1, 420); tone(110, .28, 'sine', .08, 60); }
   function sfxDeath() { tone(180, .18, 'sawtooth', .06, 50); noise(.18, .08, 600); }
   function sfxWin() { [330, 440, 550, 660].forEach((f, i) => setTimeout(() => tone(f, .18, 'square', .05), i * 120)); }
@@ -316,10 +315,8 @@
     mt = setInterval(() => {
       if (!AC || muted || state !== 'play') return;
       const i = ms++;
-      if (i % 2 === 0) tone(110 * Math.pow(2, [0, 0, 3, 5, 0, -2, 3, 5][i / 2 % 8] / 12), .16, 'square', .014, 0);
-      if (i % 4 === 1) tone(440 * Math.pow(2, [0, 3, 7, 3][i >> 2 & 3] / 12), .07, 'square', .007, 0);
-      if (i % 4 === 0) tone(60, .1, 'sine', .02, 30);
-      if (i % 4 === 2) noise(.03, .006, 3500);
+      if (i % 2 === 0) tone(110 * Math.pow(2, [0, 0, 3, 5, 0, -2, 3, 5][i / 2 % 8] / 12), .16, 'square', .026, 0);
+      if (i % 4 === 1) tone(440 * Math.pow(2, [0, 3, 7, 3][i >> 2 & 3] / 12), .07, 'square', .014, 0);
     }, 230);
   }
   function toggleMute() {
@@ -335,8 +332,6 @@
     const m = +localStorage.getItem(MODE_KEY);
     if (m >= 0 && m <= 2) mode = m;
   } catch (e) { }
-  let best = [0, 0, 0];
-  try { const b = JSON.parse(localStorage.getItem(BEST_KEY)); if (b) { best = Object.values(b); if (best.length !== 3) best = [0, 0, 0]; } } catch (e) { }
 
   let map = new Uint8Array(MW * MH), seen = new Uint8Array(MW * MH);
   let rooms = [], ents = [];
@@ -403,9 +398,10 @@
       kind === 'skeleton' ? [2, 1, 1, 0] :
       kind === 'spider' ? [2, 1, .6, 0] :
       kind === 'monster' ? [4, 2, 1.5, 0] :
+      kind === 'shadow' ? [999, 999, 1.7, 0] :
       kind === 'king' ? [12 + (mode === 2 ? 2 : 0), 2, 1.8, 0] : [1, 1, 1, 0];
     return addEnt({
-      type: 'enemy', kind, x, y, solid: true, hp: base[0],
+      type: 'enemy', kind, x, y, solid: true, hp: base[0], maxHp: base[0],
       dmg: base[1], size: base[2], z: base[3],
       cd: kind === 'king' ? 2 : 1, boss: kind === 'king'
     });
@@ -578,7 +574,6 @@
       else if (e.kind === 'pack') { packs++; msg('CARGADOR +1 (×' + packs + ')'); }
       else if (e.kind === 'plate') { plates++; msg('PLACA +1 (×' + plates + ')'); }
       else if (e.kind === 'key') { hasKey = true; msg('TARJETA OBTENIDA', C.amber); }
-      sfxPick();
     }
   }
   function endTurn() {
@@ -633,7 +628,7 @@
   function targetInSight() {
     let bestE = null, bestD = 10;
     for (const e of ents) {
-      if (e.dead || (e.type !== 'enemy' && e.type !== 'prop')) continue;
+      if (e.dead || e.kind === 'shadow' || (e.type !== 'enemy' && e.type !== 'prop')) continue;
       const dx = e.x + .5 - px, dy = e.y + .5 - py;
       const d = Math.hypot(dx, dy);
       if (d > 9 || d >= bestD) continue;
@@ -671,13 +666,13 @@
     if (n === 1) {
       if (meds <= 0) { msg('SIN BOTIQUINES', C.red); return; }
       if (hp >= maxHp) { msg('VIDA LLENA', C.dim); return; }
-      meds--; hp = Math.min(maxHp, hp + 4); sfxPick(); msg('BOTIQUÍN USADO', C.green); endTurn();
+      meds--; hp = Math.min(maxHp, hp + 4); msg('BOTIQUÍN USADO', C.green); endTurn();
     } else if (n === 2) {
       if (packs <= 0 || mag >= ammoMax) { msg('NO PUEDES RECARGAR', C.red); return; }
       packs--; mag = ammoMax; sfxReload(); msg('RECARGADO'); endTurn();
     } else if (n === 3) {
       if (plates <= 0) { msg('SIN PLACAS', C.red); return; }
-      plates--; maxHp += 2; hp = Math.min(maxHp, hp + 2); sfxPick(); msg('PLACA +2 VIDA', C.green); endTurn();
+      plates--; maxHp += 2; hp = Math.min(maxHp, hp + 2); msg('PLACA +2 VIDA', C.green); endTurn();
     }
   }
   function interact() {
@@ -728,8 +723,21 @@
     if (e.kind === 'clone') msg('COPIA DISUELTA', C.cyan);
     if (e.boss) {
       bossAlive = false;
-      msg('EL REY HUESO CAYÓ', C.amber);
       for (const o of ents) if (!o.dead && o.kind === 'clone') o.dead = true;
+      if (mode === 2) {
+        const ex = ents.find(x => x.type === 'exit');
+        let sx = e.x, sy = e.y;
+        if (ex) {
+          const dx = sign(pgx - ex.x), dy = sign(pgy - ex.y);
+          for (const o of [[dx, dy], [dx, 0], [0, dy]]) {
+            const nx = pgx + o[0], ny = pgy + o[1];
+            if ((o[0] || o[1]) && cellFree(nx, ny, true) && !(nx === ex.x && ny === ex.y)) { sx = nx; sy = ny; break; }
+          }
+        }
+        const s = spawnEnemy('shadow', sx, sy);
+        s.born = turnN + 1;
+        msg('¡CORRE A LA SALIDA!', C.red);
+      } else msg('EL REY HUESO CAYÓ', C.amber);
     }
     dropLoot(e.x, e.y, e.boss);
   }
@@ -742,7 +750,6 @@
   }
   function openChest(e) {
     e.dead = true;
-    sfxPick();
     msg('COFRE ABIERTO', C.amber);
     dropLoot(e.x, e.y, false);
     dropLoot(e.x, e.y, false);
@@ -785,7 +792,7 @@
       hp = 0;
       die();
     } else {
-      msg(src === 'king' ? 'EL REY HUESO TE GOLPEA' : src === 'clone' ? 'TU COPIA TE ALCANZA' : 'RECIBES DAÑO', C.red);
+      msg(src === 'king' ? 'EL REY HUESO TE GOLPEA' : src === 'clone' ? 'TU COPIA TE ALCANZA' : src === 'shadow' ? 'LA SOMBRA TE ALCANZÓ' : 'RECIBES DAÑO', C.red);
     }
   }
   function enemiesAct() {
@@ -793,6 +800,11 @@
     for (const e of list) {
       if (state !== 'play') break;
       const d = Math.abs(e.x - pgx) + Math.abs(e.y - pgy);
+      if (e.kind === 'shadow') {
+        if (d <= 1) { iframe = 0; hurtPlayer(999, 'shadow'); }
+        else { stepToward(e); stepToward(e); }
+        continue;
+      }
       if (e.kind === 'king') {
         if (!e.summoned && d <= 9 && los(e.x, e.y, pgx, pgy) && spawnClone()) e.summoned = true;
         e.cd--;
@@ -815,6 +827,7 @@
     }
   }
   function stepToward(e) {
+    const ex = e.kind === 'shadow' && ents.find(x => x.type === 'exit');
     const dx = sign(pgx - e.x), dy = sign(pgy - e.y);
     const opts = [];
     if (dx) opts.push([dx, 0]);
@@ -822,12 +835,12 @@
     if (Math.random() < .5) opts.reverse();
     for (const o of opts) {
       const nx = e.x + o[0], ny = e.y + o[1];
-      if (cellFree(nx, ny, true) && !(nx === pgx && ny === pgy)) { moveEnemy(e, nx, ny); return; }
+      if (cellFree(nx, ny, true) && !(nx === pgx && ny === pgy) && !(ex && nx === ex.x && ny === ex.y)) { moveEnemy(e, nx, ny); return; }
     }
     const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
     for (const d of dirs) {
       const nx = e.x + d[0], ny = e.y + d[1];
-      if (cellFree(nx, ny, true) && !(nx === pgx && ny === pgy)) { moveEnemy(e, nx, ny); return; }
+      if (cellFree(nx, ny, true) && !(nx === pgx && ny === pgy) && !(ex && nx === ex.x && ny === ex.y)) { moveEnemy(e, nx, ny); return; }
     }
   }
   function moveEnemy(e, nx, ny) {
@@ -1024,10 +1037,10 @@
     ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.stroke();
     text('1 BOTIQUÍN ×' + meds + ' · 2 CARGADOR ×' + packs + ' · 3 PLACA ×' + plates, 30, 70, 9, C.pale);
     // sector
-    text('SECTOR ' + FLOORS[floorN - 1], W / 2, 30, 14, C.amber, 'center');
-    text('TURNO ' + turnN + ' · ' + (hasKey ? 'TARJETA OK' : floorN >= 3 ? (bossAlive ? 'MATA AL REY' : 'SALIDA LIBRE') : 'BUSCA LA TARJETA'), W / 2, 47, 10, C.dim, 'center');
+    text('SECTOR ' + FLOORS[floorN - 1] + ' · ' + (hasKey ? 'TARJETA OK' : floorN >= 3 ? (bossAlive ? 'MATA AL REY' : 'SALIDA LIBRE') : 'BUSCA LA TARJETA'), W / 2, 40, 11, C.amber, 'center');
     // minimapa
     drawMap();
+    drawBossBar();
     // munición
     const aw = ammoMax * 16 + 40, hx = W / 2 - aw / 2, hy = H - 50;
     rr(hx, hy, aw, 34, 8);
@@ -1067,19 +1080,35 @@
     drawWarn();
     if (isTouch) drawTouch();
   }
+  function drawBossBar() {
+    const k = ents.find(e => e.kind === 'king' && !e.dead);
+    if (!k) return;
+    const x = 360, y = 52, w = 400;
+    rr(x, y, w, 34, 6);
+    ctx.fillStyle = 'rgba(10,3,3,.86)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(255,74,90,.55)'; ctx.lineWidth = 1; ctx.stroke();
+    text('REY HUESO', x + 10, y + 12, 9, C.amber);
+    ctx.fillStyle = 'rgba(255,74,90,.18)';
+    ctx.fillRect(x + 10, y + 18, w - 20, 8);
+    ctx.fillStyle = C.red;
+    ctx.fillRect(x + 10, y + 18, (w - 20) * clamp(k.hp / k.maxHp, 0, 1), 8);
+  }
   function drawWarn() {
     if (state !== 'play') return;
+    const sh = ents.some(e => e.kind === 'shadow' && !e.dead);
     const lowHp = hp <= maxHp * .3, lowAmmo = mag <= 2;
-    if (!lowHp && !lowAmmo) return;
-    let w = '';
-    if (lowHp) w = '¡VIDA BAJA!';
-    if (lowAmmo) w += (w ? ' · ' : '') + (packs ? '¡POCAS BALAS!' : '¡SIN MUNICIÓN!');
+    if (!sh && !lowHp && !lowAmmo) return;
+    let w = sh ? '¡CORRE A LA SALIDA!' : '';
+    if (!sh) {
+      if (lowHp) w = '¡VIDA BAJA!';
+      if (lowAmmo) w += (w ? ' · ' : '') + (packs ? '¡POCAS BALAS!' : '¡SIN MUNICIÓN!');
+    }
     const a = .70 + .30 * Math.sin(time * 9);
     ctx.globalAlpha = a;
     rr(W / 2 - 230, H / 2 + 64, 460, 40, 8);
     ctx.fillStyle = 'rgba(10,3,3,.86)'; ctx.fill();
-    ctx.strokeStyle = lowHp ? C.red : C.amber; ctx.lineWidth = 2; ctx.stroke();
-    text(w, W / 2, H / 2 + 90, 15, lowHp ? C.red : C.amber, 'center');
+    ctx.strokeStyle = sh || lowHp ? C.red : C.amber; ctx.lineWidth = 2; ctx.stroke();
+    text(w, W / 2, H / 2 + 90, 15, sh || lowHp ? C.red : C.amber, 'center');
     ctx.globalAlpha = 1;
   }
   function drawBtn(x, y, label, active) {
@@ -1188,9 +1217,6 @@
     ctx.globalAlpha = 1;
     menuRects.push({ x: sx, y: sy, w: 380, h: 52, act: 'start' });
 
-    text('WASD · CLIC disparar · F usar · R recargar', W / 2, 452, 10, C.dim, 'center');
-    text('32 KB · CERO ASSETS', W / 2, 512, 9, 'rgba(111,138,125,.65)', 'center');
-    if (best[0] > 0) text('MEJOR: ' + best[0] + ' PTS · B' + best[1] + ' · ' + best[2] + ' BAJAS', 24, 30, 11, C.amber);
   }
   function drawOverlay() {
     if (state === 'paused') {
@@ -1211,7 +1237,7 @@
     text('RANGO', W / 2, 284, 10, C.dim, 'center');
     text('SECTOR B' + floorN + ' · ' + turnN + ' TURNOS · ' + Math.floor(runTime) + ' SEG · ' + kills + ' BAJAS', W / 2, 322, 13, C.white, 'center');
     text(shots + ' DISPAROS · ' + accuracy() + '% PRECISIÓN', W / 2, 344, 12, C.pale, 'center');
-    text(score + ' PTS · MEJOR ' + best[0], W / 2, 366, 12, C.amber, 'center');
+    text(score + ' PTS', W / 2, 366, 12, C.amber, 'center');
     ctx.globalAlpha = .8 + .2 * Math.sin(time * 4);
     text('TOCA O PULSA ESPACIO', W / 2, 442, 17, C.green, 'center');
     ctx.globalAlpha = 1;
@@ -1226,21 +1252,12 @@
   function finalScore() {
     return floorN * 1200 + kills * 80 + Math.max(0, 2200 - turnN * 4) + (state === 'win' ? 2500 : 0);
   }
-  function saveBest() {
-    const s = finalScore();
-    if (s > (best[0] || 0)) {
-      best = [s, floorN, kills];
-      try { localStorage.setItem(BEST_KEY, JSON.stringify(best)); } catch (e) { }
-    }
-  }
   function die() {
     state = 'dead';
-    saveBest();
     sfxLose();
   }
   function winGame() {
     state = 'win';
-    saveBest();
     sfxWin();
   }
 
@@ -1257,7 +1274,6 @@
     floorN = 1;
     genFloor(1);
     state = 'play';
-    msg('B1 — BUSCA LA TARJETA', C.cyan);
   }
   function toMenu() {
     state = 'menu';
