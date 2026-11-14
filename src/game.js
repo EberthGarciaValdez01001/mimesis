@@ -400,7 +400,7 @@
   }
   function spawnEnemy(kind, x, y) {
     const base = kind === 'bat' ? [1, 1, .55, .3] :
-      kind === 'skeleton' || kind === 'archer' ? [2, 1, 1, 0] :
+      kind === 'skeleton' ? [2, 1, 1, 0] :
       kind === 'spider' ? [2, 1, .6, 0] :
       kind === 'monster' ? [4, 2, 1.5, 0] :
       kind === 'king' ? [12 + (mode === 2 ? 2 : 0), 2, 1.8, 0] : [1, 1, 1, 0];
@@ -522,7 +522,7 @@
       const c = spawnCell(r, 4);
       if (!c) continue;
       const rr2 = Math.random();
-      const kind = rr2 < .3 ? 'bat' : rr2 < .52 ? 'spider' : n >= 2 && rr2 < .68 ? 'archer' : n >= 2 && rr2 < .82 ? 'monster' : 'skeleton';
+      const kind = rr2 < .3 ? 'bat' : rr2 < .52 ? 'spider' : n >= 2 && rr2 < .68 ? 'monster' : 'skeleton';
       spawnEnemy(kind, c.x, c.y);
     }
     for (let i = 1; i < rooms.length; i++) {
@@ -793,16 +793,6 @@
     for (const e of list) {
       if (state !== 'play') break;
       const d = Math.abs(e.x - pgx) + Math.abs(e.y - pgy);
-      if (e.kind === 'archer') {
-        if (d <= 8 && los(e.x, e.y, pgx, pgy)) {
-          if (e.cd <= 0) {
-            tone(400, .08, 'square', .03, 900);
-            hurtPlayer(1, 'archer');
-            e.cd = 2;
-          } else e.cd--;
-        }
-        continue;
-      }
       if (e.kind === 'king') {
         if (!e.summoned && d <= 9 && los(e.x, e.y, pgx, pgy) && spawnClone()) e.summoned = true;
         e.cd--;
