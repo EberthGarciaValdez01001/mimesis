@@ -305,8 +305,6 @@
   function sfxShot() { noise(.08, .1, 1600); tone(150, .08, 'square', .06, 50); }
   function sfxReload() { tone(280, .06, 'square', .04, 480); noise(.05, .035, 2200); }
   function sfxHit() { noise(.06, .08, 700); tone(170, .08, 'square', .05, 80); }
-  function sfxHurt() { noise(.16, .1, 380); tone(120, .2, 'sawtooth', .07, 55); }
-  function sfxClone() { noise(.24, .1, 420); tone(110, .28, 'sine', .08, 60); }
   function sfxDeath() { tone(180, .18, 'sawtooth', .06, 50); noise(.18, .08, 600); }
   function sfxWin() { [330, 440, 550, 660].forEach((f, i) => setTimeout(() => tone(f, .18, 'square', .05), i * 120)); }
   function sfxLose() { [180, 140, 100].forEach((f, i) => setTimeout(() => tone(f, .3, 'sawtooth', .07), i * 180)); }
@@ -400,8 +398,9 @@
       kind === 'monster' ? [4, 2, 1.5, 0] :
       kind === 'shadow' ? [999, 999, 1.7, 0] :
       kind === 'king' ? [12 + (mode === 2 ? 2 : 0), 2, 1.8, 0] : [1, 1, 1, 0];
+    const tough = mode === 2 && kind !== 'clone' ? 2 : 0;
     return addEnt({
-      type: 'enemy', kind, x, y, solid: true, hp: base[0], maxHp: base[0],
+      type: 'enemy', kind, x, y, solid: true, hp: base[0] + tough, maxHp: base[0] + tough,
       dmg: base[1], size: base[2], z: base[3],
       cd: kind === 'king' ? 2 : 1, boss: kind === 'king'
     });
@@ -535,7 +534,7 @@
       }
     }
     const loot = ['med', 'pack', 'pack', 'plate'];
-    for (let i = 0; i < 4 + n; i++) {
+    for (let i = 0; i < 4 + n - (mode === 2 ? 2 : 0); i++) {
       const r = rooms[ri(1, rooms.length - 1)] || start;
       const c = spawnCell(r, 2);
       if (!c) continue;
@@ -714,7 +713,7 @@
     if (e.dead) return;
     e.hp -= n;
     if (e.hp <= 0) killEnemy(e);
-    else msg(e.kind === 'king' ? 'EL REY HUESO RESISTE' : 'IMPACTO', C.green);
+    else msg(e.kind === 'king' ? 'EL REY RESISTE' : 'IMPACTO', C.green);
   }
   function killEnemy(e) {
     e.dead = true;
@@ -726,6 +725,7 @@
       for (const o of ents) if (!o.dead && o.kind === 'clone') o.dead = true;
       if (mode === 2) {
         const ex = ents.find(x => x.type === 'exit');
+        if (ex) { ex.x = rooms[0].cx; ex.y = rooms[0].cy; ex.vx = ex.x + .5; ex.vy = ex.y + .5; }
         let sx = e.x, sy = e.y;
         if (ex) {
           const dx = sign(pgx - ex.x), dy = sign(pgy - ex.y);
@@ -735,8 +735,8 @@
           }
         }
         const s = spawnEnemy('shadow', sx, sy);
-        s.born = turnN + 1;
-        msg('¡CORRE A LA SALIDA!', C.red);
+        s.delay = 3;
+        msg('¡CORRE!', C.red);
       } else msg('EL REY HUESO CAYÓ', C.amber);
     }
     dropLoot(e.x, e.y, e.boss);
@@ -759,7 +759,7 @@
       addItem('med', x, y); addItem('pack', x, y); addItem('plate', x, y);
       return;
     }
-    if (Math.random() > .62) return;
+    if (Math.random() > (mode === 2 ? .4 : .62)) return;
     const r = Math.random();
     if (r < .3) addItem('med', x, y);
     else if (r < .6) addItem('pack', x, y);
@@ -775,7 +775,6 @@
       if (!cellFree(x, y, true) || x === pgx && y === pgy) continue;
       const c = spawnEnemy('clone', x, y);
       c.born = turnN;
-      sfxClone();
       msg('COPIA — ELIMÍNALA', C.red);
       return true;
     }
@@ -786,13 +785,12 @@
     hp -= n;
     iframe = 1;
     hurtFlash = .32;
-    sfxHurt();
     if (src === 'king') spawnClone();
     if (hp <= 0) {
       hp = 0;
       die();
     } else {
-      msg(src === 'king' ? 'EL REY HUESO TE GOLPEA' : src === 'clone' ? 'TU COPIA TE ALCANZA' : src === 'shadow' ? 'LA SOMBRA TE ALCANZÓ' : 'RECIBES DAÑO', C.red);
+      msg(src === 'king' ? 'EL REY TE GOLPEA' : src === 'clone' ? 'TU COPIA TE ALCANZA' : src === 'shadow' ? 'LA SOMBRA TE ALCANZÓ' : 'RECIBES DAÑO', C.red);
     }
   }
   function enemiesAct() {
@@ -801,6 +799,7 @@
       if (state !== 'play') break;
       const d = Math.abs(e.x - pgx) + Math.abs(e.y - pgy);
       if (e.kind === 'shadow') {
+        if (e.delay) { e.delay--; continue; }
         if (d <= 1) { iframe = 0; hurtPlayer(999, 'shadow'); }
         else { stepToward(e); stepToward(e); }
         continue;
