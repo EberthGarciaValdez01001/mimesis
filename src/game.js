@@ -163,19 +163,17 @@
     R(g, 2, 4, 3, 2, K); R(g, 11, 4, 3, 2, K);
     E(g, 8, 6, 3, 3, K); E(g, 8, 6, 2, 2, '#4a2a3a');
     R(g, 6, 5, 1, 1, '#ff6a8a'); R(g, 9, 5, 1, 1, '#ff6a8a');
-    R(g, 7, 8, 2, 2, K);
   });
   S.skeleton = spr(14, 20, g => {
     R(g, 4, 17, 2, 3, K); R(g, 8, 17, 2, 3, K);
     R(g, 5, 10, 4, 7, K);
     R(g, 3, 8, 8, 2, '#c8c0a8');
-    R(g, 3, 11, 8, 1, '#8a8a7a'); R(g, 3, 13, 8, 1, '#8a8a7a');
+    R(g, 3, 11, 8, 1, '#8a8a7a');
     R(g, 4, 4, 6, 5, K); R(g, 5, 5, 4, 3, '#d8d0b8');
     R(g, 5, 6, 1, 1, '#ff6a8a'); R(g, 8, 6, 1, 1, '#ff6a8a');
     R(g, 6, 8, 2, 1, '#2a1a1a');
     R(g, 1, 10, 2, 6, K); R(g, 11, 10, 2, 6, K);
     R(g, 1, 14, 2, 1, '#c8c0a8'); R(g, 11, 14, 2, 1, '#c8c0a8');
-    R(g, 12, 8, 1, 6, '#8a9a8a');
   });
   S.spider = spr(16, 12, g => {
     R(g, 0, 4, 4, 1, K); R(g, 12, 4, 4, 1, K);
@@ -183,7 +181,6 @@
     E(g, 8, 6, 4, 3, K); E(g, 8, 6, 3, 2, '#3a2a3a');
     R(g, 5, 5, 2, 2, '#ff6a8a'); R(g, 9, 5, 2, 2, '#ff6a8a');
     R(g, 7, 8, 2, 1, '#8a1e2a');
-    R(g, 2, 9, 3, 1, K); R(g, 11, 9, 3, 1, K);
   });
   S.clone = spr(14, 20, g => {
     R(g, 5, 17, 2, 3, K); R(g, 8, 17, 2, 3, K);
@@ -196,13 +193,11 @@
     R(g, 2, 1, 8, 2, '#2a1a0e'); R(g, 3, 3, 6, 2, '#6a4a2a');
     E(g, 6, 9, 5, 5, '#2a1a0e'); E(g, 6, 9, 4, 4, '#3f7a4e');
     R(g, 3, 6, 6, 1, '#5fbf6a'); R(g, 4, 9, 2, 2, '#9adf8a');
-    R(g, 3, 13, 6, 1, '#1a1009');
   });
   S.crate = spr(14, 14, g => {
     R(g, 1, 1, 12, 12, '#1a1009'); R(g, 2, 2, 10, 10, '#3a2312');
     R(g, 3, 3, 8, 8, '#2c1a0e');
     R(g, 2, 6, 10, 2, '#6a3f1e'); R(g, 6, 2, 2, 10, '#6a3f1e');
-    R(g, 2, 11, 3, 2, '#8a5a2a'); R(g, 10, 3, 2, 2, '#8a5a2a');
   });
   S.chest = spr(16, 14, g => {
     R(g, 1, 4, 14, 9, '#1a1009'); R(g, 2, 5, 12, 7, '#6a3f1e');
@@ -1044,28 +1039,22 @@
     rr(20, 52, 330, 28, 6);
     ctx.fillStyle = 'rgba(3,10,7,.82)'; ctx.fill();
     ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.stroke();
-    text('INVENTARIO', 30, 70, 9, C.dim);
-    text('1 BOTIQUÍN ×' + meds + ' · 2 CARGADOR ×' + packs + ' · 3 PLACA ×' + plates, 104, 70, 9, C.pale);
+    text('1 BOTIQUÍN ×' + meds + ' · 2 CARGADOR ×' + packs + ' · 3 PLACA ×' + plates, 30, 70, 9, C.pale);
     // sector
     text('SECTOR ' + FLOORS[floorN - 1], W / 2, 30, 14, C.amber, 'center');
     text('TURNO ' + turnN + ' · ' + (hasKey ? 'TARJETA OK' : floorN >= 3 ? (bossAlive ? 'MATA AL REY HUESO' : 'SALIDA LIBRE') : 'BUSCA LA TARJETA'), W / 2, 47, 10, C.dim, 'center');
     // minimapa
     drawMap();
-    // armas
-    const hx = W / 2 - 210, hy = H - 70;
-    rr(hx, hy, 420, 54, 8);
+    // munición
+    const aw = ammoMax * 16 + 40, hx = W / 2 - aw / 2, hy = H - 50;
+    rr(hx, hy, aw, 34, 8);
     ctx.fillStyle = 'rgba(3,10,7,.84)'; ctx.fill();
     ctx.strokeStyle = C.line; ctx.stroke();
-    text('ARMA', hx + 14, hy + 18, 9, C.dim);
     for (let i = 0; i < ammoMax; i++) {
-      const bx = hx + 54 + i * 16;
+      const bx = hx + 20 + i * 16;
       ctx.fillStyle = i < mag ? C.amber : 'rgba(255,209,102,.15)';
-      ctx.fillRect(bx, hy + 10, 9, 12);
+      ctx.fillRect(bx, hy + 11, 9, 12);
     }
-    text('CARGADORES ' + packs, hx + 54 + ammoMax * 16 + 8, hy + 20, 10, C.pale);
-    drawSlot(hx + 14, hy + 30, '1', 'BOTIQUÍN', meds);
-    drawSlot(hx + 146, hy + 30, '2', 'CARGADOR', packs);
-    drawSlot(hx + 278, hy + 30, '3', 'PLACA', plates);
     // crosshair
     const cx = W / 2, cy = H / 2;
     ctx.strokeStyle = target ? C.amber : 'rgba(125,255,90,.72)';
@@ -1092,7 +1081,23 @@
       text(pr, W / 2, H - 92, 13, C.amber, 'center');
       ctx.globalAlpha = 1;
     }
+    drawWarn();
     if (isTouch) drawTouch();
+  }
+  function drawWarn() {
+    if (state !== 'play') return;
+    const lowHp = hp <= maxHp * .3, lowAmmo = mag <= 2;
+    if (!lowHp && !lowAmmo) return;
+    let w = '';
+    if (lowHp) w = '¡VIDA BAJA!';
+    if (lowAmmo) w += (w ? ' · ' : '') + (packs ? '¡POCAS BALAS!' : '¡SIN MUNICIÓN!');
+    const a = .70 + .30 * Math.sin(time * 9);
+    ctx.globalAlpha = a;
+    rr(W / 2 - 230, H / 2 + 64, 460, 40, 8);
+    ctx.fillStyle = 'rgba(10,3,3,.86)'; ctx.fill();
+    ctx.strokeStyle = lowHp ? C.red : C.amber; ctx.lineWidth = 2; ctx.stroke();
+    text(w, W / 2, H / 2 + 90, 15, lowHp ? C.red : C.amber, 'center');
+    ctx.globalAlpha = 1;
   }
   function drawBtn(x, y, label, active) {
     rr(x, y, 34, 30, 5);
@@ -1102,26 +1107,26 @@
     ctx.stroke();
     text(label, x + 17, y + 20, 11, active ? C.green : C.pale, 'center');
   }
-  function drawSlot(x, y, key, label, n) {
-    text(key + ' ' + label, x, y + 14, 9, n > 0 ? C.pale : C.dim);
-    text('×' + n, x + 108, y + 14, 12, n > 0 ? C.green : C.dim, 'right');
-  }
   function drawMap() {
-    const mx = W - 128, my = 16, ms = 112, off = 8, cs = 4;
+    const mx = W - 152, my = 16, ms = 136, off = 8, cs = 5;
     rr(mx, my, ms, ms, 6);
-    ctx.fillStyle = 'rgba(3,10,7,.86)'; ctx.fill();
-    ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = 'rgba(2,10,14,.88)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(141,232,255,.40)'; ctx.lineWidth = 1; ctx.stroke();
     for (let y = 0; y < MH; y++)
       for (let x = 0; x < MW; x++) {
         const i = idx(x, y);
         if (!seen[i]) continue;
-        ctx.fillStyle = map[i] ? 'rgba(95,191,106,.28)' : 'rgba(30,70,52,.82)';
+        ctx.fillStyle = map[i] ? 'rgba(141,232,255,.44)' : 'rgba(20,70,80,.74)';
         ctx.fillRect(mx + off + x * cs, my + off + y * cs, cs, cs);
       }
     for (const e of ents) {
       if (e.dead || !seen[idx(e.x, e.y)]) continue;
-      if (e.type === 'exit') {
-        ctx.fillStyle = bossAlive && floorN >= 3 ? C.red : C.amber;
+      if (e.type === 'enemy') {
+        const d = e.boss ? 7 : 4;
+        ctx.fillStyle = e.boss ? C.amber : C.red;
+        ctx.fillRect(mx + off + e.x * cs + (cs - d) / 2, my + off + e.y * cs + (cs - d) / 2, d, d);
+      } else if (e.type === 'exit') {
+        ctx.fillStyle = bossAlive && floorN >= 3 ? C.red : C.lime;
         ctx.fillRect(mx + off + e.x * cs, my + off + e.y * cs, cs, cs);
       } else if (e.kind === 'key') {
         ctx.fillStyle = C.amber;
@@ -1131,7 +1136,7 @@
     const pxm = mx + off + pgx * cs + 2, pym = my + off + pgy * cs + 2;
     ctx.fillStyle = C.white;
     ctx.beginPath();
-    ctx.moveTo(pxm + DIRX[pdir] * 4, pym + DIRY[pdir] * 4);
+    ctx.moveTo(pxm + DIRX[pdir] * 5, pym + DIRY[pdir] * 5);
     ctx.lineTo(pxm - DIRX[pdir] * 2 - DIRY[pdir] * 3, pym - DIRY[pdir] * 2 + DIRX[pdir] * 3);
     ctx.lineTo(pxm - DIRX[pdir] * 2 + DIRY[pdir] * 3, pym - DIRY[pdir] * 2 - DIRX[pdir] * 3);
     ctx.closePath();
@@ -1272,7 +1277,6 @@
     genFloor(1);
     state = 'play';
     msg('SECTOR B1 — ENCUENTRA LA TARJETA', C.cyan);
-    msg('REVISA TU INVENTARIO ARRIBA', C.dim);
     sfxStart();
   }
   function toMenu() {
