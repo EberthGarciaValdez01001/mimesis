@@ -116,7 +116,7 @@ Los frascos y cajas se rompen y sueltan objetos; los cofres se abren con `F`. Lo
 
 | Regla | Cómo se cumple |
 |---|---|
-| **32 KB máximo, sin comprimir** | `index.html` + `game.min.js` = **31,722 bytes** (96,8% del límite). `npm run build` lo verifica y falla si se pasa. |
+| **32 KB máximo, sin comprimir** | `index.html` + `game.min.js` = **31,946 bytes** (97,5% del límite). `npm run build` lo verifica y falla si se pasa. |
 | **Solo código propio** | Canvas 2D, WebAudio y `localStorage`. Sin engines, frameworks ni dependencias en runtime. Terser solo se usa en build. |
 | **Cero assets** | No hay imágenes, audio, fuentes ni base64. Texturas, sprites y sonido se generan en código. |
 | **Repo nuevo y link jugable** | [eberthgarciavaldez01001.github.io/mimesis](https://eberthgarciavaldez01001.github.io/mimesis/) |

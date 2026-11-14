@@ -1217,6 +1217,9 @@
     ctx.globalAlpha = 1;
     menuRects.push({ x: sx, y: sy, w: 380, h: 52, act: 'start' });
 
+    text('WASD mover · A/D girar · Q/E lateral', W / 2, 444, 10, C.dim, 'center');
+    text('CLIC/ESPACIO disparar · F usar · R recargar', W / 2, 462, 10, C.dim, 'center');
+    text('1/2/3 objetos · P pausa · M silencio · móvil: botones', W / 2, 480, 10, C.dim, 'center');
   }
   function drawOverlay() {
     if (state === 'paused') {
