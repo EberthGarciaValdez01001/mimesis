@@ -10,9 +10,9 @@
     amber: '#ffd166', red: '#ff4a5a', cyan: '#8de8ff', white: '#f7f0df'
   };
   const MODES = [
-    { name: 'FÁCIL', hp: 10, mag: 8, packs: 3, meds: 2, plates: 0, mul: .72, desc: 'Más margen' },
-    { name: 'MEDIO', hp: 8, mag: 6, packs: 2, meds: 1, plates: 0, mul: 1, desc: 'La experiencia base' },
-    { name: 'DIFÍCIL', hp: 6, mag: 5, packs: 1, meds: 1, plates: 0, mul: 1.38, desc: 'Menos balas' }
+    { name: 'FÁCIL', hp: 10, mag: 8, packs: 3, meds: 2, plates: 0, mul: .72 },
+    { name: 'MEDIO', hp: 8, mag: 6, packs: 2, meds: 1, plates: 0, mul: 1 },
+    { name: 'DIFÍCIL', hp: 6, mag: 5, packs: 1, meds: 1, plates: 0, mul: 1.38 }
   ];
   const FLOORS = ['B1 · CONTENCIÓN', 'B2 · INCUBACIÓN', 'B3 · EL REY HUESO'];
   const BEST_KEY = 'mim_best_v2', MUTE_KEY = 'mim_mute_v2', MODE_KEY = 'mim_mode_v2';
@@ -276,10 +276,6 @@
     master = AC.createGain();
     master.gain.value = muted ? 0 : .55;
     master.connect(AC.destination);
-    const o = AC.createOscillator(), g = AC.createGain();
-    o.type = 'sine'; o.frequency.value = 42;
-    g.gain.value = .012;
-    o.connect(g); g.connect(master); o.start();
     noz = AC.createBuffer(1, AC.sampleRate * .25, AC.sampleRate);
     const d = noz.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -313,12 +309,8 @@
   function sfxHit() { noise(.06, .08, 700); tone(170, .08, 'square', .05, 80); }
   function sfxHurt() { noise(.16, .1, 380); tone(120, .2, 'sawtooth', .07, 55); }
   function sfxPick() { tone(520, .05, 'square', .035); tone(760, .06, 'square', .03); }
-  function sfxOpen() { noise(.12, .06, 900); tone(220, .12, 'square', .04, 340); }
-  function sfxDoor() { tone(80, .35, 'sawtooth', .06, 45); noise(.2, .05, 500); }
-  function sfxFlash() { noise(.14, .08, 2200); tone(900, .14, 'square', .04, 1400); }
   function sfxClone() { noise(.24, .1, 420); tone(110, .28, 'sine', .08, 60); }
   function sfxDeath() { tone(180, .18, 'sawtooth', .06, 50); noise(.18, .08, 600); }
-  function sfxStart() { tone(220, .12, 'square', .06); tone(330, .14, 'square', .05); }
   function sfxWin() { [330, 440, 550, 660].forEach((f, i) => setTimeout(() => tone(f, .18, 'square', .05), i * 120)); }
   function sfxLose() { [180, 140, 100].forEach((f, i) => setTimeout(() => tone(f, .3, 'sawtooth', .07), i * 180)); }
   function toggleMute() {
@@ -334,8 +326,8 @@
     const m = +localStorage.getItem(MODE_KEY);
     if (m >= 0 && m <= 2) mode = m;
   } catch (e) { }
-  let best = { score: 0, floor: 0, kills: 0 };
-  try { best = JSON.parse(localStorage.getItem(BEST_KEY)) || best; } catch (e) { }
+  let best = [0, 0, 0];
+  try { const b = JSON.parse(localStorage.getItem(BEST_KEY)); if (b) { best = Object.values(b); if (best.length !== 3) best = [0, 0, 0]; } } catch (e) { }
 
   let map = new Uint8Array(MW * MH), seen = new Uint8Array(MW * MH);
   let rooms = [], ents = [];
@@ -398,15 +390,11 @@
     addEnt({ type: 'prop', kind, x, y, solid: true, size: kind === 'chest' ? .5 : .42, z: 0 });
   }
   function spawnEnemy(kind, x, y) {
-    const base = {
-      bat: [1, 1, .55, .3],
-      skeleton: [2, 1, 1, 0],
-      archer: [2, 1, 1, 0],
-      spider: [2, 1, .6, 0],
-      monster: [4, 2, 1.5, 0],
-      clone: [1, 1, 1, 0],
-      king: [12 + (mode === 2 ? 2 : 0), 2, 1.8, 0]
-    }[kind];
+    const base = kind === 'bat' ? [1, 1, .55, .3] :
+      kind === 'skeleton' || kind === 'archer' ? [2, 1, 1, 0] :
+      kind === 'spider' ? [2, 1, .6, 0] :
+      kind === 'monster' ? [4, 2, 1.5, 0] :
+      kind === 'king' ? [12 + (mode === 2 ? 2 : 0), 2, 1.8, 0] : [1, 1, 1, 0];
     return addEnt({
       type: 'enemy', kind, x, y, solid: true, hp: base[0],
       dmg: base[1], size: base[2], z: base[3],
@@ -580,7 +568,7 @@
       if (e.kind === 'med') { meds++; msg('BOTIQUÍN +1 (×' + meds + ')'); }
       else if (e.kind === 'pack') { packs++; msg('CARGADOR +1 (×' + packs + ')'); }
       else if (e.kind === 'plate') { plates++; msg('PLACA +1 (×' + plates + ')'); }
-      else if (e.kind === 'key') { hasKey = true; msg('TARJETA MAESTRA OBTENIDA', C.amber); }
+      else if (e.kind === 'key') { hasKey = true; msg('TARJETA OBTENIDA', C.amber); }
       sfxPick();
     }
   }
@@ -592,8 +580,7 @@
     if (nextFlash <= 0) {
       flash = 1.25;
       nextFlash = ri(7, 11);
-      msg('DESTELLO DE EMERGENCIA', C.cyan);
-      sfxFlash();
+      msg('DESTELLO', C.cyan);
     }
     enemiesAct();
     if (state === 'play') markSeen();
@@ -606,7 +593,7 @@
     const e = entAt(nx, ny);
     if (e && e.type === 'enemy') { melee(e); return; }
     if (e && e.type === 'prop') {
-      if (e.kind === 'chest') { msg('EL COFRE ESTÁ CERRADO — F', C.amber); sfxBump(); return; }
+      if (e.kind === 'chest') { msg('COFRE CERRADO — F', C.amber); sfxBump(); return; }
       destroyProp(e);
       endTurn();
       return;
@@ -651,7 +638,7 @@
   }
   function shoot() {
     if (!canShoot()) return;
-    if (mag <= 0) { msg('SIN MUNICIÓN — R PARA RECARGAR', C.red); sfxClick(); return; }
+    if (mag <= 0) { msg('SIN MUNICIÓN — R', C.red); sfxClick(); return; }
     mag--; shots++; recoil = 1; muzzle = .09; sfxShot();
     const t = targetInSight();
     if (t) {
@@ -669,21 +656,21 @@
   function reload() {
     if (state !== 'play' || pTurnT < 1) return;
     if (mag >= ammoMax) { msg('CARGADOR LLENO', C.dim); return; }
-    if (packs <= 0) { msg('NO QUEDAN CARGADORES', C.red); return; }
-    packs--; mag = ammoMax; sfxReload(); msg('RECARGA COMPLETA'); endTurn();
+    if (packs <= 0) { msg('SIN CARGADORES', C.red); return; }
+    packs--; mag = ammoMax; sfxReload(); msg('RECARGADO'); endTurn();
   }
   function useItem(n) {
     if (!canAct()) return;
     if (n === 1) {
       if (meds <= 0) { msg('SIN BOTIQUINES', C.red); return; }
-      if (hp >= maxHp) { msg('VIDA COMPLETA', C.dim); return; }
+      if (hp >= maxHp) { msg('VIDA LLENA', C.dim); return; }
       meds--; hp = Math.min(maxHp, hp + 4); sfxPick(); msg('BOTIQUÍN USADO', C.green); endTurn();
     } else if (n === 2) {
       if (packs <= 0 || mag >= ammoMax) { msg('NO PUEDES RECARGAR', C.red); return; }
-      packs--; mag = ammoMax; sfxReload(); msg('RECARGA COMPLETA'); endTurn();
+      packs--; mag = ammoMax; sfxReload(); msg('RECARGADO'); endTurn();
     } else if (n === 3) {
       if (plates <= 0) { msg('SIN PLACAS', C.red); return; }
-      plates--; maxHp += 2; hp = Math.min(maxHp, hp + 2); sfxPick(); msg('BLINDAJE +2 VIDA', C.green); endTurn();
+      plates--; maxHp += 2; hp = Math.min(maxHp, hp + 2); sfxPick(); msg('PLACA +2 VIDA', C.green); endTurn();
     }
   }
   function interact() {
@@ -702,11 +689,11 @@
   }
   function tryExit() {
     if (floorN >= 3) {
-      if (bossAlive) { msg('EL REY HUESO BLOQUEA LA SALIDA', C.red); sfxBump(); return; }
+      if (bossAlive) { msg('EL REY BLOQUEA LA SALIDA', C.red); sfxBump(); return; }
       winGame();
       return;
     }
-    if (!hasKey) { msg('NECESITAS LA TARJETA MAESTRA', C.amber); sfxBump(); return; }
+    if (!hasKey) { msg('FALTA LA TARJETA', C.amber); sfxBump(); return; }
     nextFloor();
   }
   function nextFloor() {
@@ -714,8 +701,7 @@
     floorN++;
     genFloor(floorN);
     hp = Math.min(maxHp, hp + 2);
-    msg('SECTOR B' + floorN + ' — ' + FLOORS[floorN - 1].split('·')[1].trim(), C.cyan);
-    sfxDoor();
+    msg('SECTOR B' + floorN, C.cyan);
   }
   function melee(e) {
     sfxHit();
@@ -726,7 +712,7 @@
     if (e.dead) return;
     e.hp -= n;
     if (e.hp <= 0) killEnemy(e);
-    else msg(e.kind === 'king' ? 'EL REY HUESO SE RETUERCE' : 'IMPACTO', C.green);
+    else msg(e.kind === 'king' ? 'EL REY HUESO RESISTE' : 'IMPACTO', C.green);
   }
   function killEnemy(e) {
     e.dead = true;
@@ -735,7 +721,7 @@
     if (e.kind === 'clone') msg('COPIA DISUELTA', C.cyan);
     if (e.boss) {
       bossAlive = false;
-      msg('EL REY HUESO CAYÓ — SALIDA LIBERADA', C.amber);
+      msg('EL REY HUESO CAYÓ', C.amber);
       for (const o of ents) if (!o.dead && o.kind === 'clone') o.dead = true;
     }
     dropLoot(e.x, e.y, e.boss);
@@ -749,7 +735,7 @@
   }
   function openChest(e) {
     e.dead = true;
-    sfxOpen();
+    sfxPick();
     msg('COFRE ABIERTO', C.amber);
     dropLoot(e.x, e.y, false);
     dropLoot(e.x, e.y, false);
@@ -776,7 +762,7 @@
       const c = spawnEnemy('clone', x, y);
       c.born = turnN;
       sfxClone();
-      msg('UNA COPIA DESPIERTA — ELIMÍNALA', C.red);
+      msg('COPIA — ELIMÍNALA', C.red);
       return true;
     }
     return false;
@@ -1042,7 +1028,7 @@
     text('1 BOTIQUÍN ×' + meds + ' · 2 CARGADOR ×' + packs + ' · 3 PLACA ×' + plates, 30, 70, 9, C.pale);
     // sector
     text('SECTOR ' + FLOORS[floorN - 1], W / 2, 30, 14, C.amber, 'center');
-    text('TURNO ' + turnN + ' · ' + (hasKey ? 'TARJETA OK' : floorN >= 3 ? (bossAlive ? 'MATA AL REY HUESO' : 'SALIDA LIBRE') : 'BUSCA LA TARJETA'), W / 2, 47, 10, C.dim, 'center');
+    text('TURNO ' + turnN + ' · ' + (hasKey ? 'TARJETA OK' : floorN >= 3 ? (bossAlive ? 'MATA AL REY' : 'SALIDA LIBRE') : 'BUSCA LA TARJETA'), W / 2, 47, 10, C.dim, 'center');
     // minimapa
     drawMap();
     // munición
@@ -1146,8 +1132,8 @@
     const p = isTouch ? '' : 'F  ';
     const nx = pgx + DIRX[pdir], ny = pgy + DIRY[pdir];
     const here = entAt(pgx, pgy), front = entAt(nx, ny);
-    if (here && here.type === 'exit') return p + (floorN >= 3 ? (bossAlive ? 'SALIDA BLOQUEADA POR EL REY HUESO' : 'EXTRAERSE') : (hasKey ? 'BAJAR AL SIGUIENTE SECTOR' : 'FALTA LA TARJETA'));
-    if (front && front.type === 'exit') return p + (floorN >= 3 ? (bossAlive ? 'SALIDA BLOQUEADA POR EL REY HUESO' : 'EXTRAERSE') : (hasKey ? 'BAJAR' : 'FALTA LA TARJETA'));
+    if (here && here.type === 'exit') return p + (floorN >= 3 ? (bossAlive ? 'SALIDA BLOQUEADA' : 'EXTRAERSE') : (hasKey ? 'BAJAR' : 'FALTA LA TARJETA'));
+    if (front && front.type === 'exit') return p + (floorN >= 3 ? (bossAlive ? 'SALIDA BLOQUEADA' : 'EXTRAERSE') : (hasKey ? 'BAJAR' : 'FALTA LA TARJETA'));
     if (front && front.type === 'prop') return p + (front.kind === 'chest' ? 'ABRIR COFRE' : 'ROMPER');
     return '';
   }
@@ -1194,7 +1180,6 @@
       ctx.strokeStyle = sel ? C.green : C.line; ctx.lineWidth = sel ? 2 : 1; ctx.stroke();
       text(m.name, x + cw / 2, y + 28, 20, sel ? C.white : C.pale, 'center');
       text(m.hp + ' VIDA · ' + m.mag + ' BALAS', x + cw / 2, y + 49, 10, sel ? C.green : C.dim, 'center');
-      text(m.desc, x + cw / 2, y + 68, 9, C.dim, 'center');
       menuRects.push({ x, y, w: cw, h: 86, act: 'mode', i });
     }
     const sx = W / 2 - 190, sy = 360;
@@ -1206,10 +1191,10 @@
     ctx.globalAlpha = 1;
     menuRects.push({ x: sx, y: sy, w: 380, h: 52, act: 'start' });
 
-    text('WASD mover/girar · Q/E lateral · CLIC disparar · F usar · R recargar', W / 2, 452, 10, C.dim, 'center');
-    text('P pausa · M silencio · móvil: botones', W / 2, 470, 10, C.dim, 'center');
+    text('WASD · CLIC disparar · F usar · R recargar', W / 2, 452, 10, C.dim, 'center');
+    text('P pausa · M silencio', W / 2, 470, 10, C.dim, 'center');
     text('32 KB · CERO ASSETS', W / 2, 512, 9, 'rgba(111,138,125,.65)', 'center');
-    if (best.score > 0) text('MEJOR: ' + best.score + ' PTS · B' + best.floor + ' · ' + best.kills + ' BAJAS', 24, 30, 11, C.amber);
+    if (best[0] > 0) text('MEJOR: ' + best[0] + ' PTS · B' + best[1] + ' · ' + best[2] + ' BAJAS', 24, 30, 11, C.amber);
   }
   function drawOverlay() {
     if (state === 'paused') {
@@ -1223,14 +1208,14 @@
     ctx.fillStyle = 'rgba(2,6,4,.82)'; ctx.fillRect(0, 0, W, H);
     const title = win ? 'EXTRACCIÓN COMPLETA' : 'TE COPIARON';
     text(title, W / 2, 140, win ? 54 : 62, win ? C.green : C.white, 'center', SANS);
-    text(win ? 'EL REY HUESO YA NO PUEDE COPIARTE' : 'EL LABERINTO TE COPIÓ', W / 2, 172, 13, win ? C.lime : C.red, 'center');
+    text(win ? 'EL REY HUESO CAYÓ' : 'EL LABERINTO TE COPIÓ', W / 2, 172, 13, win ? C.lime : C.red, 'center');
     const score = finalScore();
     const rk = rankFor(score);
     text(rk, W / 2, 260, 82, win ? C.green : C.amber, 'center', SANS);
     text('RANGO', W / 2, 284, 10, C.dim, 'center');
     text('SECTOR B' + floorN + ' · ' + turnN + ' TURNOS · ' + Math.floor(runTime) + ' SEG · ' + kills + ' BAJAS', W / 2, 322, 13, C.white, 'center');
     text(shots + ' DISPAROS · ' + accuracy() + '% PRECISIÓN', W / 2, 344, 12, C.pale, 'center');
-    text(score + ' PTS · MEJOR ' + best.score, W / 2, 366, 12, C.amber, 'center');
+    text(score + ' PTS · MEJOR ' + best[0], W / 2, 366, 12, C.amber, 'center');
     ctx.globalAlpha = .8 + .2 * Math.sin(time * 4);
     text('TOCA O PULSA ESPACIO', W / 2, 442, 17, C.green, 'center');
     ctx.globalAlpha = 1;
@@ -1247,8 +1232,8 @@
   }
   function saveBest() {
     const s = finalScore();
-    if (s > (best.score || 0)) {
-      best = { score: s, floor: floorN, kills };
+    if (s > (best[0] || 0)) {
+      best = [s, floorN, kills];
       try { localStorage.setItem(BEST_KEY, JSON.stringify(best)); } catch (e) { }
     }
   }
@@ -1276,8 +1261,7 @@
     floorN = 1;
     genFloor(1);
     state = 'play';
-    msg('SECTOR B1 — ENCUENTRA LA TARJETA', C.cyan);
-    sfxStart();
+    msg('B1 — BUSCA LA TARJETA', C.cyan);
   }
   function toMenu() {
     state = 'menu';

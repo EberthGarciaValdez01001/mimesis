@@ -4,8 +4,8 @@ import { minify } from 'terser';
 const LIMIT = 32768;
 const source = readFileSync('src/game.js', 'utf8');
 const result = await minify(source, {
-  compress: { passes: 2, drop_console: true },
-  mangle: { properties: { builtins: false, reserved: ['bat', 'skeleton', 'archer', 'spider', 'monster', 'clone', 'king', 'score', 'floor', 'kills'] } },
+  compress: { passes: 3, drop_console: true },
+  mangle: { properties: { builtins: false } },
   format: { comments: false, ascii_only: false }
 });
 
