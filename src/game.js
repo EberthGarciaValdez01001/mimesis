@@ -262,7 +262,7 @@
   }
 
   /* ---------------------------------------------------------------- audio */
-  let AC = null, master = null, noz = null;
+  let AC = null, master = null, noz = null, mt = null, ms = 0;
   let muted = false;
   try { muted = localStorage.getItem(MUTE_KEY) === '1'; } catch (e) { }
   function ensureAudio() {
@@ -279,6 +279,7 @@
     noz = AC.createBuffer(1, AC.sampleRate * .25, AC.sampleRate);
     const d = noz.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    music();
   }
   function tone(f, d, type, v, slide) {
     if (!AC || muted) return;
@@ -301,10 +302,7 @@
     s.connect(f); f.connect(g); g.connect(master);
     s.start(t); s.stop(t + d);
   }
-  function sfxStep() { noise(.04, .035, 500); }
-  function sfxBump() { tone(90, .06, 'square', .04, 60); }
   function sfxShot() { noise(.08, .1, 1600); tone(150, .08, 'square', .06, 50); }
-  function sfxClick() { tone(700, .03, 'square', .025, 500); }
   function sfxReload() { tone(280, .06, 'square', .04, 480); noise(.05, .035, 2200); }
   function sfxHit() { noise(.06, .08, 700); tone(170, .08, 'square', .05, 80); }
   function sfxHurt() { noise(.16, .1, 380); tone(120, .2, 'sawtooth', .07, 55); }
@@ -313,6 +311,17 @@
   function sfxDeath() { tone(180, .18, 'sawtooth', .06, 50); noise(.18, .08, 600); }
   function sfxWin() { [330, 440, 550, 660].forEach((f, i) => setTimeout(() => tone(f, .18, 'square', .05), i * 120)); }
   function sfxLose() { [180, 140, 100].forEach((f, i) => setTimeout(() => tone(f, .3, 'sawtooth', .07), i * 180)); }
+  function music() {
+    if (mt) return;
+    mt = setInterval(() => {
+      if (!AC || muted || state !== 'play') return;
+      const i = ms++;
+      if (i % 2 === 0) tone(110 * Math.pow(2, [0, 0, 3, 5, 0, -2, 3, 5][i / 2 % 8] / 12), .16, 'square', .014, 0);
+      if (i % 4 === 1) tone(440 * Math.pow(2, [0, 3, 7, 3][i >> 2 & 3] / 12), .07, 'square', .007, 0);
+      if (i % 4 === 0) tone(60, .1, 'sine', .02, 30);
+      if (i % 4 === 2) noise(.03, .006, 3500);
+    }, 230);
+  }
   function toggleMute() {
     muted = !muted;
     try { localStorage.setItem(MUTE_KEY, muted ? '1' : '0'); } catch (e) { }
@@ -589,20 +598,19 @@
   function tryMove(dx, dy) {
     if (!canAct()) return;
     const nx = pgx + dx, ny = pgy + dy;
-    if (wallAt(nx, ny)) { sfxBump(); return; }
+    if (wallAt(nx, ny)) return;
     const e = entAt(nx, ny);
     if (e && e.type === 'enemy') { melee(e); return; }
     if (e && e.type === 'prop') {
-      if (e.kind === 'chest') { msg('COFRE CERRADO — F', C.amber); sfxBump(); return; }
+      if (e.kind === 'chest') { msg('COFRE CERRADO — F', C.amber); return; }
       destroyProp(e);
       endTurn();
       return;
     }
-    if (e && e.solid) { sfxBump(); return; }
+    if (e && e.solid) return;
     pmx = pgx; pmy = pgy; pgx = nx; pgy = ny;
     px = pmx + .5; py = pmy + .5;
     pMoveT = 0;
-    sfxStep();
     pickupAt(nx, ny);
     markSeen();
     endTurn();
@@ -621,7 +629,6 @@
     pAng0 = pAng;
     pAngT += d * Math.PI / 2;
     pTurnT = 0;
-    sfxStep();
   }
   function targetInSight() {
     let bestE = null, bestD = 10;
@@ -638,7 +645,7 @@
   }
   function shoot() {
     if (!canShoot()) return;
-    if (mag <= 0) { msg('SIN MUNICIÓN — R', C.red); sfxClick(); return; }
+    if (mag <= 0) { msg('SIN MUNICIÓN — R', C.red); return; }
     mag--; shots++; recoil = 1; muzzle = .09; sfxShot();
     const t = targetInSight();
     if (t) {
@@ -689,11 +696,11 @@
   }
   function tryExit() {
     if (floorN >= 3) {
-      if (bossAlive) { msg('EL REY BLOQUEA LA SALIDA', C.red); sfxBump(); return; }
+      if (bossAlive) { msg('EL REY BLOQUEA LA SALIDA', C.red); return; }
       winGame();
       return;
     }
-    if (!hasKey) { msg('FALTA LA TARJETA', C.amber); sfxBump(); return; }
+    if (!hasKey) { msg('FALTA LA TARJETA', C.amber); return; }
     nextFloor();
   }
   function nextFloor() {
@@ -1192,7 +1199,6 @@
     menuRects.push({ x: sx, y: sy, w: 380, h: 52, act: 'start' });
 
     text('WASD · CLIC disparar · F usar · R recargar', W / 2, 452, 10, C.dim, 'center');
-    text('P pausa · M silencio', W / 2, 470, 10, C.dim, 'center');
     text('32 KB · CERO ASSETS', W / 2, 512, 9, 'rgba(111,138,125,.65)', 'center');
     if (best[0] > 0) text('MEJOR: ' + best[0] + ' PTS · B' + best[1] + ' · ' + best[2] + ' BAJAS', 24, 30, 11, C.amber);
   }

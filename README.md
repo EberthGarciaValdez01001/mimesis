@@ -112,7 +112,7 @@ Los frascos y cajas se rompen y sueltan objetos; los cofres se abren con `F`. Lo
 
 | Regla | Cómo se cumple |
 |---|---|
-| **32 KB máximo, sin comprimir** | `index.html` + `game.min.js` = **31,639 bytes** (96,6% del límite). `npm run build` lo verifica y falla si se pasa. |
+| **32 KB máximo, sin comprimir** | `index.html` + `game.min.js` = **31,729 bytes** (96,8% del límite). `npm run build` lo verifica y falla si se pasa. |
 | **Solo código propio** | Canvas 2D, WebAudio y `localStorage`. Sin engines, frameworks ni dependencias en runtime. Terser solo se usa en build. |
 | **Cero assets** | No hay imágenes, audio, fuentes ni base64. Texturas, sprites y sonido se generan en código. |
 | **Repo nuevo y link jugable** | [eberthgarciavaldez01001.github.io/mimesis](https://eberthgarciavaldez01001.github.io/mimesis/) |
@@ -145,7 +145,7 @@ Los frascos y cajas se rompen y sueltan objetos; los cofres se abren con `F`. Lo
 - **Mazmorra procedural** de 24×24: salas sin solaparse, pasillos en L, conexiones extra para crear bucles, texturas de pared por sector y colocación garantizada de inicio, tarjeta, salida, props, loot y enemigos.
 - **Turnos** con animación suave de movimiento y giro. La IA persigue en línea recta, rodea obstáculos y ataca al quedar adyacente. Los esqueletos arqueros disparan si tienen línea de visión.
 - **Copias** que nacen delante del jugador al iniciar el combate y cuando El Rey Hueso acierta; persiguen al 100% de la velocidad y se disuelven de un disparo o un golpe; también desaparecen al matar al jefe.
-- **Audio sintetizado** con osciladores y ruido: pasos, disparo, recarga, impactos, dolor, recogida, copia, victoria y derrota.
+- **Audio sintetizado** con osciladores y ruido: música táctica de 8 bits (bajo, arpegio, bombo y hi-hat) y efectos de disparo, recarga, impacto, daño, recogida, copia, victoria y derrota.
 - **Persistencia** de protocolo, silencio y mejor marca con `localStorage`.
 
 ---
