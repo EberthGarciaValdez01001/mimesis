@@ -50,6 +50,7 @@ El juego es horizontal. Si abres el link en vertical verás el aviso para girar 
 - **Todo es por turnos.** Cada paso, disparo, recarga o interacción consume un turno; después se mueven los enemigos. Girar es gratis.
 - **La linterna apunta hacia delante.** Lo que queda fuera del cono se ve como silueta; los enemigos delatan sus ojos. Cada **7–11 turnos** un destello de emergencia revela la sala entera durante un instante.
 - **La pistola dispara al centro de la mira.** Si hay una pared entre tú y el objetivo, el disparo se pierde. Recargar consume un cargador y un turno.
+- **Solo se ataca disparando.** Caminar contra un enemigo bloquea el paso; no hay golpe cuerpo a cuerpo. Si te quedas sin balas, tendrás que esquivar y buscar munición.
 - **Minimapa táctico cian** de 136×136: revela la mazmorra al explorarla y marca a los enemigos que están en zonas ya descubiertas. Las escaleras y la tarjeta aparecen cuando las ves.
 - **Las copias son frágiles.** Tienen 1 de vida: un disparo o un golpe las disuelve. El Rey Hueso invoca una al iniciar el combate y otra cada vez que te golpea; intentan nacer delante de ti para que las veas. Elimínalas antes de que te acorralen.
 - **La barra de inventario** (arriba a la izquierda) muestra lo que tienes: botiquines, cargadores y placas. Al recoger algo, el mensaje confirma el total, por ejemplo `BOTIQUÍN +1 (×3)`.
@@ -67,7 +68,6 @@ El juego es horizontal. Si abres el link en vertical verás el aviso para girar 
 | **Turnos** | Mover, disparar, recargar, usar o interactuar consume turno; girar no |
 | **Vida** | 10 / 8 / 6 según el protocolo; sin regeneración |
 | **Pistola** | 5–8 balas por cargador; recarga de 1 turno; 2 de daño |
-| **Melee** | Caminar contra un enemigo o prop lo golpea; 1 de daño |
 | **Golpe recibido** | 1 de daño (2 el jefe y los monstruos); La Sombra mata de un golpe; como máximo un golpe por turno |
 | **Copias** | El Rey Hueso invoca una al iniciar el combate y otra al golpearte; máximo 3; intentan nacer delante de ti; **1 disparo o 1 golpe las disuelve**; también mueren si matas al Rey Hueso |
 | **Tarjeta** | Obligatoria en B1 y B2 para bajar |
@@ -118,7 +118,7 @@ Los frascos y cajas se rompen y sueltan objetos; los cofres se abren con `F`. Lo
 
 | Regla | Cómo se cumple |
 |---|---|
-| **32 KB máximo, sin comprimir** | `index.html` + `game.min.js` = **31,959 bytes** (97,5% del límite). `npm run build` lo verifica y falla si se pasa. |
+| **32 KB máximo, sin comprimir** | `index.html` + `game.min.js` = **31,862 bytes** (97,2% del límite). `npm run build` lo verifica y falla si se pasa. |
 | **Solo código propio** | Canvas 2D, WebAudio y `localStorage`. Sin engines, frameworks ni dependencias en runtime. Terser solo se usa en build. |
 | **Cero assets** | No hay imágenes, audio, fuentes ni base64. Texturas, sprites y sonido se generan en código. |
 | **Repo nuevo y link jugable** | [eberthgarciavaldez01001.github.io/mimesis](https://eberthgarciavaldez01001.github.io/mimesis/) |

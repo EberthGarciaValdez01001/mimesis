@@ -594,7 +594,6 @@
     const nx = pgx + dx, ny = pgy + dy;
     if (wallAt(nx, ny)) return;
     const e = entAt(nx, ny);
-    if (e && e.type === 'enemy') { melee(e); return; }
     if (e && e.type === 'prop') {
       if (e.kind === 'chest') { msg('COFRE CERRADO — F', C.amber); return; }
       destroyProp(e);
@@ -703,11 +702,6 @@
     genFloor(floorN);
     hp = Math.min(maxHp, hp + 2);
     msg('SECTOR B' + floorN, C.cyan);
-  }
-  function melee(e) {
-    sfxHit();
-    damageEnemy(e, 1);
-    endTurn();
   }
   function damageEnemy(e, n) {
     if (e.dead) return;
